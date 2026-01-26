@@ -1,0 +1,8 @@
+# RUN:
+docker build -t mac-checker .
+docker run -d \
+  --name mac-checker \
+  -v "$(pwd)/data:/data" \
+  --network host \
+  --cap-add=NET_RAW --cap-add=NET_ADMIN --privileged \
+  mac-checker
