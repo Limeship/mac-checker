@@ -1,7 +1,7 @@
 import cron from "node-cron";
 import Datastore from "nedb-promises";
-import { uploadJob } from "./uploadJob.ts";
-import {runJob} from "./job.ts";
+import { uploadJob } from "./uploadJob";
+import { runJob } from "./job";
 import dotenv from "dotenv"
 
 dotenv.config()

@@ -1,6 +1,6 @@
-import {getDevicesFromCoda} from "./getDevicesFromCoda.ts";
-import type{Device} from "./getDevicesFromCoda.ts"
-import {checkDevice, getLocalDevices} from "./checkDevice.ts";
+import { getDevicesFromCoda } from "./getDevicesFromCoda";
+import type { Device } from "./getDevicesFromCoda"
+import { checkDevice, getLocalDevices } from "./checkDevice";
 import Datastore from "nedb-promises";
 
 export interface DeviceLog extends Device {
