@@ -28,6 +28,6 @@ export async function getDevicesFromCoda(): Promise<Device[]> {
 
 export async function addLineToResultTable(data: any) {
     console.log(data);
-    const resultTable = await coda.getTable("pWlziHOneQ", "grid-cIPwzm_oIL");
+    const resultTable = await coda.getTable(process.env.CodaResultDocumentId || "", process.env.CodaResultTableId || "");
     await resultTable.insertRows(data);
 }
