@@ -38,6 +38,7 @@ ENV CodaDeviceTableId=tableId
 ENV CodaResultDocumentId=documentId
 ENV CodaResultTableId=tableId
 
+
 # Command to run the app
 CMD ["node", "dist/index.js"]
 
