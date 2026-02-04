@@ -1,8 +1,5 @@
 import { Coda } from "coda-js";
 
-
-const coda = new Coda(process.env.CodaToken || ""); // insert your token
-
 export interface Device {
     user: string;
     description: string;
@@ -10,6 +7,7 @@ export interface Device {
 }
 
 export async function getDevicesFromCoda(): Promise<Device[]> {
+    const coda = new Coda(process.env.CodaToken || ""); // insert your token
     const macAdressTable = await coda.getTable(process.env.CodaDeviceDocumentId || "", process.env.CodaDeviceTableId || "");
     const macAdressRows = await macAdressTable.listRows({
         useColumnNames: true,
@@ -27,6 +25,7 @@ export async function getDevicesFromCoda(): Promise<Device[]> {
 
 
 export async function addLineToResultTable(data: any) {
+    const coda = new Coda(process.env.CodaToken || ""); // insert your token
     console.log(data);
     const resultTable = await coda.getTable(process.env.CodaResultDocumentId || "", process.env.CodaResultTableId || "");
     await resultTable.insertRows(data);
