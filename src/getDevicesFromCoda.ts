@@ -23,7 +23,6 @@ export async function getDevicesFromCoda(): Promise<Device[]> {
     return devices;
 }
 
-
 export async function addLineToResultTable(data: any) {
     const coda = new Coda(process.env.CodaToken || ""); // insert your token
     console.log(data);
