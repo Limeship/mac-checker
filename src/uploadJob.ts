@@ -1,13 +1,19 @@
-import Datastore from "nedb-promises";
+import PocketBase from "pocketbase";
 import type { DeviceLog } from "./job";
 import { addLineToResultTable } from "./getDevicesFromCoda";
 
-export async function uploadJob(db: Datastore<DeviceLog>): Promise<void> {
+export async function uploadJob(pb: PocketBase): Promise<void> {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date();
     endOfDay.setHours(23, 59, 59, 999);
-    const devices = await db.find<DeviceLog>({ timestamp: { $gte: startOfDay, $lte: endOfDay } });
+
+    const startStr = startOfDay.toISOString().replace('T', ' ');
+    const endStr = endOfDay.toISOString().replace('T', ' ');
+
+    const devices = await pb.collection("device_logs").getFullList<DeviceLog>({
+        filter: `timestamp >= "${startStr}" && timestamp <= "${endStr}"`
+    });
 
     const grouped = devices.reduce<Record<string, DeviceLog[]>>((acc, item) => {
         (acc[item.mac] ||= []).push(item);

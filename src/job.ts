@@ -1,13 +1,13 @@
 import { getDevicesFromCoda } from "./getDevicesFromCoda";
 import type { Device } from "./getDevicesFromCoda"
 import { checkDevice, getLocalDevices } from "./checkDevice";
-import Datastore from "nedb-promises";
+import PocketBase from "pocketbase";
 
 export interface DeviceLog extends Device {
-  timestamp: Date;
+  timestamp: Date | string;
 }
 
-export async function runJob(db: Datastore<DeviceLog>): Promise<void> {
+export async function runJob(pb: PocketBase): Promise<void> {
   let devices: Device[];
 
   try {
@@ -22,9 +22,9 @@ export async function runJob(db: Datastore<DeviceLog>): Promise<void> {
     if (ok) {
       const deviceLog: DeviceLog = {
         ...device,
-        timestamp: new Date()
+        timestamp: new Date().toISOString()
       };
-      await db.insert(deviceLog);
+      await pb.collection("device_logs").create(deviceLog);
       console.log(`✅ ${deviceLog.user} (${deviceLog.description}) passed at ${deviceLog.timestamp}`);
     } else {
       console.log(`❌ ${device.user} (${device.description}) did not pass`);
