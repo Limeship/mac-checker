@@ -17,11 +17,9 @@ services:
     depends_on:
       - pocketbase
     environment:
-      - PB_URL=http://pocketbase:8090
-      # IMPORTANT: create an admin account manually at http://localhost:8090/_/ and provide the credentials below
+      - PB_URL=http://localhost:8090
       - PB_ADMIN_EMAIL=admin@example.com
       - PB_ADMIN_PASSWORD=change_me_12345
-      # Fill the required Coda credentials as well
       - CodaToken=your_token_here
       - CodaDeviceDocumentId=your_doc_id
       - CodaDeviceTableId=your_table_id

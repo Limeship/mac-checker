@@ -24,6 +24,7 @@ export async function runJob(pb: PocketBase): Promise<void> {
         ...device,
         timestamp: new Date().toISOString()
       };
+      console.log(deviceLog);
       await pb.collection("device_logs").create(deviceLog);
       console.log(`✅ ${deviceLog.user} (${deviceLog.description}) passed at ${deviceLog.timestamp}`);
     } else {

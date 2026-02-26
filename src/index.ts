@@ -20,7 +20,8 @@ async function startApp() {
   } catch (err: any) {
     console.error("❌ Failed to authenticate with PocketBase:", err.message);
   }
-
+  console.log("⏰ Running scheduled job at", new Date().toISOString());
+  await runJob(pb);
   // Run every 15 minutes
   cron.schedule("*/15 * * * *", async () => {
     console.log("⏰ Running scheduled job at", new Date().toISOString());
