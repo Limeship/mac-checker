@@ -1,22 +1,18 @@
 import fs from "fs";
 import readline from "readline";
 import PocketBase from "pocketbase";
-import dotenv from "dotenv";
-import type { DeviceLog } from "./job";
+import type { DeviceLog } from "../jobs/job";
+import { COLLECTIONS } from "../constants";
+import { CONFIG } from "../config";
 
-dotenv.config();
-
-const PB_URL = process.env.PB_URL || "http://localhost:8090";
-const PB_ADMIN_EMAIL = process.env.PB_ADMIN_EMAIL || "admin@example.com";
-const PB_ADMIN_PASSWORD = process.env.PB_ADMIN_PASSWORD || "change_me_12345";
 const NEDB_FILE = "/data/devices.db"; // path inside docker or adjust for local
 
 export async function migrateDb() {
-    const pb = new PocketBase(PB_URL);
+    const pb = new PocketBase(CONFIG.PB_URL);
 
-    console.log(`🚀 Connecting to PocketBase at ${PB_URL}`);
+    console.log(`🚀 Connecting to PocketBase at ${CONFIG.PB_URL}`);
     try {
-        await pb.admins.authWithPassword(PB_ADMIN_EMAIL, PB_ADMIN_PASSWORD);
+        await pb.admins.authWithPassword(CONFIG.PB_ADMIN_EMAIL, CONFIG.PB_ADMIN_PASSWORD);
         console.log("✅ Authenticated as admin.");
     } catch (e: any) {
         console.error("❌ Failed to authenticate with PocketBase:", e.message);
@@ -26,18 +22,16 @@ export async function migrateDb() {
 
     // Ensure the collection exists
     try {
-        await pb.collections.getOne("device_logs");
+        await pb.collections.getOne(COLLECTIONS.DEVICE_LOGS);
         console.log("✅ Collection 'device_logs' exists.");
     } catch (e) {
         console.log("⏳ Creating 'device_logs' collection...");
         try {
             await pb.collections.create({
-                name: "device_logs",
+                name: COLLECTIONS.DEVICE_LOGS,
                 type: "base",
-                schema: [
-                    { name: "user", type: "text", required: true },
-                    { name: "description", type: "text", required: true },
-                    { name: "mac", type: "text", required: true },
+                fields: [
+                    { name: "device", type: "relation", options: { collectionId: COLLECTIONS.DEVICES, maxSelect: 1 }, required: true },
                     { name: "timestamp", type: "date", required: true }
                 ]
             });
@@ -85,15 +79,22 @@ async function processLines(filePath: string, pb: PocketBase) {
                 timestamp = new Date(timestamp as string | number);
             }
 
+            // Find the referenced device
+            let pbDeviceRecord;
+            try {
+                pbDeviceRecord = await pb.collection(COLLECTIONS.DEVICES).getFirstListItem(`mac="${record.mac}"`);
+            } catch (err) {
+                console.warn(`⚠️ Skipping log entry - device with mac ${record.mac} not found in DB.`);
+                continue;
+            }
+
             // Create record in PB
             const data = {
-                user: record.user,
-                description: record.description,
-                mac: record.mac,
+                device: pbDeviceRecord.id,
                 timestamp: timestamp instanceof Date ? timestamp.toISOString() : undefined
             };
 
-            await pb.collection("device_logs").create(data);
+            await pb.collection(COLLECTIONS.DEVICE_LOGS).create(data);
             count++;
             if (count % 100 === 0) {
                 console.log(`... migrated ${count} records`);

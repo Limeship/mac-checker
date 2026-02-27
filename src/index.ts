@@ -1,27 +1,25 @@
 import cron from "node-cron";
 import PocketBase from "pocketbase";
-import { uploadJob } from "./uploadJob";
-import { runJob } from "./job";
-import dotenv from "dotenv"
+import { uploadJob } from "./jobs/uploadJob";
+import { runJob } from "./jobs/job";
+import { initCollections } from "./db/initDb";
+import { syncDevicesToPb } from "./db/syncDevices";
+import { CONFIG } from "./config";
 
-dotenv.config()
-
-const PB_URL = process.env.PB_URL || "http://localhost:8090";
-const PB_ADMIN_EMAIL = process.env.PB_ADMIN_EMAIL || "admin@example.com";
-const PB_ADMIN_PASSWORD = process.env.PB_ADMIN_PASSWORD || "change_me_12345";
-
-const pb = new PocketBase(PB_URL);
+const pb = new PocketBase(CONFIG.PB_URL);
 
 async function startApp() {
   console.log("🚀 Starting device checker, connecting to PocketBase...");
   try {
-    await pb.admins.authWithPassword(PB_ADMIN_EMAIL, PB_ADMIN_PASSWORD);
+    await pb.collection("_superusers").authWithPassword(CONFIG.PB_ADMIN_EMAIL, CONFIG.PB_ADMIN_PASSWORD);
     console.log("✅ Authenticated with PocketBase.");
+    await initCollections(pb);
+    await syncDevicesToPb(pb);
   } catch (err: any) {
-    console.error("❌ Failed to authenticate with PocketBase:", err.message);
+    console.error("❌ Failed to authenticate or initialize PocketBase:", err.message);
   }
   console.log("⏰ Running scheduled job at", new Date().toISOString());
-  await runJob(pb);
+  //await runJob(pb);
   // Run every 15 minutes
   cron.schedule("*/15 * * * *", async () => {
     console.log("⏰ Running scheduled job at", new Date().toISOString());

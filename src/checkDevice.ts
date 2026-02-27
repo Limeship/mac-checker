@@ -1,4 +1,6 @@
-import Unifi from "node-unifi";
+import { Controller } from "node-unifi";
+import { type Device } from "./coda/getDevicesFromCoda";
+import { CONFIG } from "./config";
 
 export interface LocalDevice {
     name: string;
@@ -6,20 +8,20 @@ export interface LocalDevice {
     mac: string;
 }
 export async function getLocalDevices(): Promise<LocalDevice[]> {
-    const controller = new Unifi.Controller({
-        host: process.env.RouterIp || "",
-        sslverify: false,
-        port: 443,
+    console.log("⏳ Fetching devices from local UniFi Controller...");
+    const controller = new Controller({
+        host: CONFIG.UNIFI_HOST,
+        port: CONFIG.UNIFI_PORT,
     });
 
-    await controller.login(process.env.RouterUser || "", process.env.RouterPassword || "");
-    const clients = await controller.getClientDevices();
-    const localDevices = clients.map(x => {
-       return {
-           name: x.hostname,
-           ip: x.ip,
-           mac: x.mac
-       } as LocalDevice;
+    await controller.login(CONFIG.UNIFI_USERNAME, CONFIG.UNIFI_PASSWORD);
+    const clients = await controller.getClientDevices(CONFIG.UNIFI_SITE);
+    const localDevices = clients.map((x: any) => {
+        return {
+            name: x.hostname,
+            ip: x.ip,
+            mac: x.mac
+        } as LocalDevice;
     });
     console.log(localDevices);
     return localDevices;

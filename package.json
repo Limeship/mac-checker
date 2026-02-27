@@ -7,8 +7,9 @@
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "build": "tsc -p tsconfig.json && tsc-alias -p tsconfig.json",
-    "start2": "ts-node src/uploadJob.ts",
-    "migrate": "ts-node src/importDb.ts",
+    "start2": "ts-node src/jobs/uploadJob.ts",
+    "migrate": "ts-node src/db/importDb.ts",
+    "reset-db": "ts-node src/db/resetDb.ts",
     "test": "jest"
   },
   "dependencies": {

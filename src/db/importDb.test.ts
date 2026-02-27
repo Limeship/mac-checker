@@ -2,6 +2,7 @@ import { migrateDb } from "./importDb";
 import PocketBase from "pocketbase";
 import fs from "fs";
 import readline from "readline";
+import { COLLECTIONS } from "../constants";
 
 jest.mock("pocketbase");
 jest.mock("fs");
@@ -21,7 +22,8 @@ describe("importDb.ts", () => {
                 create: jest.fn().mockResolvedValue({})
             },
             collection: jest.fn().mockReturnValue({
-                create: jest.fn().mockResolvedValue({})
+                create: jest.fn().mockResolvedValue({}),
+                getFirstListItem: jest.fn().mockResolvedValue({ id: "mock_device_id" })
             })
         };
 
@@ -69,13 +71,13 @@ describe("importDb.ts", () => {
         await migrateDb();
 
         expect(mockPbInstance.admins.authWithPassword).toHaveBeenCalled();
-        expect(mockPbInstance.collections.getOne).toHaveBeenCalledWith("device_logs");
+        expect(mockPbInstance.collections.getOne).toHaveBeenCalledWith(COLLECTIONS.DEVICE_LOGS);
         expect(mockPbInstance.collections.create).toHaveBeenCalled();
 
         expect(fs.createReadStream).toHaveBeenCalledWith("./data/devices.db");
 
         // 1 record created
-        expect(mockPbInstance.collection).toHaveBeenCalledWith("device_logs");
+        expect(mockPbInstance.collection).toHaveBeenCalledWith(COLLECTIONS.DEVICE_LOGS);
         expect(mockPbInstance.collection().create).toHaveBeenCalledTimes(1);
     });
 

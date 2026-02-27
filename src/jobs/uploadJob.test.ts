@@ -1,8 +1,9 @@
 import { uploadJob } from "./uploadJob";
 import PocketBase from "pocketbase";
-import { addLineToResultTable } from "./getDevicesFromCoda";
+import { addLineToResultTable } from "../coda/getDevicesFromCoda";
+import { COLLECTIONS } from "../constants";
 
-jest.mock("./getDevicesFromCoda");
+jest.mock("../coda/getDevicesFromCoda");
 
 describe("uploadJob.ts", () => {
     let mockPb: jest.Mocked<PocketBase>;
@@ -22,16 +23,25 @@ describe("uploadJob.ts", () => {
 
     it("should fetch logs for today, group by mac, and upload to Coda", async () => {
         const mockData = [
-            { user: "User1", description: "Phone", mac: "MAC1", timestamp: new Date(2026, 1, 24, 10, 0, 0).toISOString() },
-            { user: "User1", description: "Phone", mac: "MAC1", timestamp: new Date(2026, 1, 24, 12, 0, 0).toISOString() },
-            { user: "User2", description: "Laptop", mac: "MAC2", timestamp: new Date(2026, 1, 24, 9, 0, 0).toISOString() }
+            {
+                expand: { device: { user: "User1", description: "Phone", mac: "MAC1" } },
+                timestamp: new Date(2026, 1, 24, 10, 0, 0).toISOString()
+            },
+            {
+                expand: { device: { user: "User1", description: "Phone", mac: "MAC1" } },
+                timestamp: new Date(2026, 1, 24, 12, 0, 0).toISOString()
+            },
+            {
+                expand: { device: { user: "User2", description: "Laptop", mac: "MAC2" } },
+                timestamp: new Date(2026, 1, 24, 9, 0, 0).toISOString()
+            }
         ];
 
         mockCollection.getFullList.mockResolvedValue(mockData);
 
         await uploadJob(mockPb);
 
-        expect(mockPb.collection).toHaveBeenCalledWith("device_logs");
+        expect(mockPb.collection).toHaveBeenCalledWith(COLLECTIONS.DEVICE_LOGS);
         expect(mockCollection.getFullList).toHaveBeenCalled();
 
         // Verify the filtered query contains timestamp >= and <= bounds

@@ -1,10 +1,11 @@
 import { runJob } from "./job";
-import { getDevicesFromCoda } from "./getDevicesFromCoda";
-import { getLocalDevices, checkDevice } from "./checkDevice";
+import { getDevicesFromCoda } from "../coda/getDevicesFromCoda";
+import { getLocalDevices, checkDevice } from "../checkDevice";
 import PocketBase from "pocketbase";
+import { COLLECTIONS } from "../constants";
 
-jest.mock("./getDevicesFromCoda");
-jest.mock("./checkDevice");
+jest.mock("../coda/getDevicesFromCoda");
+jest.mock("../checkDevice");
 
 describe("job.ts", () => {
     let mockPb: jest.Mocked<PocketBase>;
@@ -14,7 +15,8 @@ describe("job.ts", () => {
         jest.clearAllMocks();
 
         mockCollection = {
-            create: jest.fn().mockResolvedValue({})
+            create: jest.fn().mockResolvedValue({}),
+            getFirstListItem: jest.fn().mockResolvedValue({ id: "mock_device_id" })
         };
 
         mockPb = {
@@ -42,11 +44,10 @@ describe("job.ts", () => {
         expect(getLocalDevices).toHaveBeenCalled();
 
         // Check if logs were created appropriately
-        expect(mockPb.collection).toHaveBeenCalledWith("device_logs");
+        expect(mockPb.collection).toHaveBeenCalledWith(COLLECTIONS.DEVICE_LOGS);
         expect(mockCollection.create).toHaveBeenCalledTimes(1);
         expect(mockCollection.create).toHaveBeenCalledWith(expect.objectContaining({
-            user: "User1",
-            mac: "MAC1"
+            device: "mock_device_id"
         }));
     });
 

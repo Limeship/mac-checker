@@ -1,34 +1,38 @@
 import { getLocalDevices, checkDevice } from "./checkDevice";
-import Unifi from "node-unifi";
+import UnifiEvents from "node-unifi";
+import { CONFIG } from "./config";
 
-let UnifiController: any;
+jest.mock("./config", () => ({
+    CONFIG: {
+        UNIFI_HOST: "127.0.0.1",
+        UNIFI_PORT: 8443,
+        UNIFI_USERNAME: "admin",
+        UNIFI_PASSWORD: "password",
+        UNIFI_SITE: "default"
+    }
+}));
+
+let unifiClientMock: any;
 
 jest.mock("node-unifi", () => {
-    return {
-        Controller: jest.fn().mockImplementation(() => {
-            UnifiController = {
-                login: jest.fn().mockResolvedValue(true),
-                getClientDevices: jest.fn().mockResolvedValue([
-                    { hostname: "Device1", ip: "192.168.1.10", mac: "aa:bb:cc:dd:ee:ff" },
-                    { hostname: "Device2", ip: "192.168.1.11", mac: "11:22:33:44:55:66" }
-                ])
-            };
-            return UnifiController;
-        })
-    };
+    return jest.fn().mockImplementation(() => {
+        unifiClientMock = {
+            login: jest.fn().mockResolvedValue(true),
+            getClientDevices: jest.fn().mockResolvedValue([
+                { hostname: "Device1", ip: "192.168.1.10", mac: "aa:bb:cc:dd:ee:ff" },
+                { hostname: "Device2", ip: "192.168.1.11", mac: "11:22:33:44:55:66" }
+            ])
+        };
+        return unifiClientMock;
+    });
 });
 
 describe("checkDevice.ts", () => {
-    const originalEnv = process.env;
-
     beforeEach(() => {
         jest.clearAllMocks();
-        process.env = { ...originalEnv, RouterIp: "127.0.0.1", RouterUser: "admin", RouterPassword: "password" };
     });
 
-    afterAll(() => {
-        process.env = originalEnv;
-    });
+
 
     describe("getLocalDevices", () => {
         it("should fetch and map devices from Unifi controller", async () => {
@@ -37,14 +41,12 @@ describe("checkDevice.ts", () => {
             expect(devices[0]).toEqual({ name: "Device1", ip: "192.168.1.10", mac: "aa:bb:cc:dd:ee:ff" });
 
             // Verify mock was called
-            const MockController = Unifi.Controller as unknown as jest.Mock;
-            expect(MockController).toHaveBeenCalledWith({
+            expect(UnifiEvents).toHaveBeenCalledWith({
                 host: "127.0.0.1",
-                sslverify: false,
-                port: 443
+                port: 8443
             });
-            expect(UnifiController.login).toHaveBeenCalledWith("admin", "password");
-            expect(UnifiController.getClientDevices).toHaveBeenCalled();
+            expect(unifiClientMock.login).toHaveBeenCalledWith("admin", "password");
+            expect(unifiClientMock.getClientDevices).toHaveBeenCalledWith("default");
         });
     });
 
