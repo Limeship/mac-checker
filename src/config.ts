@@ -20,4 +20,9 @@ export const CONFIG = {
     UNIFI_USERNAME: process.env.RouterUser || "admin",
     UNIFI_PASSWORD: process.env.RouterPassword || "password",
     UNIFI_PORT: parseInt(process.env.RouterPort || "8443", 10),
+
+    // Robin Configuration
+    ROBIN_ORGANIZATION_ID: process.env.RobinOrganizationId || "",
+    ROBIN_EMAIL: process.env.RobinEmail || "",
+    ROBIN_PASSWORD: process.env.RobinPassword || "",
 } as const;
