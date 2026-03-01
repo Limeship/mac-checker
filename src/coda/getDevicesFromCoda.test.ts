@@ -1,4 +1,4 @@
-import { getDevicesFromCoda, addLineToResultTable } from "./getDevicesFromCoda";
+import { getDevicesFromCoda, getPeopleFromCoda } from "./getDevicesFromCoda";
 import { Coda } from "coda-js";
 
 jest.mock("coda-js", () => {
@@ -6,16 +6,19 @@ jest.mock("coda-js", () => {
         Coda: jest.fn().mockImplementation(() => {
             return {
                 getTable: jest.fn().mockResolvedValue({
-                    listRows: jest.fn().mockResolvedValue([
-                        {
-                            values: {
-                                "Who": "User1",
-                                "Device Description": "Phone",
-                                "MAC Address": "aa:bb:cc"
+                    listRows: jest.fn().mockImplementation((options) => {
+                        return Promise.resolve([
+                            {
+                                values: {
+                                    "Who": "User1",
+                                    "Device Description": "Phone",
+                                    "MAC Address": "aa:bb:cc",
+                                    "Name": "User1",
+                                    "Robin User ID": "robin123"
+                                }
                             }
-                        }
-                    ]),
-                    insertRows: jest.fn().mockResolvedValue(true)
+                        ]);
+                    })
                 })
             };
         })
@@ -32,8 +35,7 @@ describe("getDevicesFromCoda.ts", () => {
             CodaToken: "token",
             CodaDeviceDocumentId: "docId",
             CodaDeviceTableId: "tableId",
-            CodaResultDocumentId: "resDocId",
-            CodaResultTableId: "resTableId"
+            CodaPeopleTableId: "peopleTableId"
         };
     });
 
@@ -50,24 +52,17 @@ describe("getDevicesFromCoda.ts", () => {
                 description: "Phone",
                 mac: "aa:bb:cc"
             });
-
-            const MockCoda = Coda as jest.Mock;
-            expect(MockCoda).toHaveBeenCalledWith("token");
-            const codaInstance = MockCoda.mock.instances[0];
-            expect(codaInstance.getTable).toHaveBeenCalledWith("docId", "tableId");
         });
     });
 
-    describe("addLineToResultTable", () => {
-        it("should insert a row into the result table", async () => {
-            const data = [{ Name: "User1", Device: "Phone" }];
-            await addLineToResultTable(data);
-
-            const MockCoda = Coda as jest.Mock;
-            const codaInstance = MockCoda.mock.instances[0];
-            expect(codaInstance.getTable).toHaveBeenCalledWith("resDocId", "resTableId");
-            const tableInstance = await codaInstance.getTable();
-            expect(tableInstance.insertRows).toHaveBeenCalledWith(data);
+    describe("getPeopleFromCoda", () => {
+        it("should fetch and parse people from Coda", async () => {
+            const people = await getPeopleFromCoda();
+            expect(people).toHaveLength(1);
+            expect(people[0]).toEqual({
+                name: "User1",
+                robinId: "robin123"
+            });
         });
     });
 });

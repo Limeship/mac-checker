@@ -3,7 +3,61 @@ import { getDevicesFromCoda, getPeopleFromCoda, type Device, type People } from 
 import { COLLECTIONS } from "../constants";
 
 export async function syncDevices(db: Surreal) {
-    console.log("⏳ Syncing devices from Coda to SurrealDB...");
+    console.log("⏳ Syncing users and devices from Coda to SurrealDB...");
+
+    const userMap = await syncUsers(db);
+    if (!userMap) return;
+
+    await syncDevicesInternal(db, userMap);
+}
+
+async function syncUsers(db: Surreal): Promise<Map<string, string> | null> {
+    let codaPeople: People[];
+    try {
+        codaPeople = await getPeopleFromCoda();
+    } catch (err: any) {
+        console.error("❌ Failed to get people from Coda:", err.message);
+        return null;
+    }
+
+    const userMap = new Map<string, string>(); // name -> record id
+
+    try {
+        const results = await db.query<[any[]]>(`SELECT * FROM ${COLLECTIONS.USERS}`);
+        const dbUsers = results[0];
+        const dbUsersMap = new Map(dbUsers.map(u => [u.name, u]));
+
+        for (const person of codaPeople) {
+            const existingUser = dbUsersMap.get(person.name);
+            if (!existingUser) {
+                console.log(`➕ Adding new user: ${person.name}`);
+                const [newUser] = await db.query<[any]>(`CREATE ${COLLECTIONS.USERS} CONTENT $data`, {
+                    data: { name: person.name, robinId: person.robinId }
+                });
+                userMap.set(person.name, newUser[0].id);
+            } else {
+                if (existingUser.robinId !== person.robinId) {
+                    console.log(`🔄 Updating user: ${person.name}`);
+                    await db.query(`UPDATE ${existingUser.id} MERGE $data`, {
+                        data: { robinId: person.robinId }
+                    });
+                }
+                userMap.set(person.name, existingUser.id);
+                dbUsersMap.delete(person.name);
+            }
+        }
+        for (const [mac, record] of dbUsersMap.entries()) {
+            console.log(`🗑️ Deleting user: ${record.name} (${record.robinId})`);
+            await db.query(`DELETE ${record.id}`);
+        }
+        return userMap;
+    } catch (err: any) {
+        console.error("❌ Failed to sync users:", err.message);
+        return null;
+    }
+}
+
+async function syncDevicesInternal(db: Surreal, userMap: Map<string, string>) {
     let codaDevices: Device[];
     try {
         codaDevices = await getDevicesFromCoda();
@@ -11,67 +65,51 @@ export async function syncDevices(db: Surreal) {
         console.error("❌ Failed to get devices from Coda:", err.message);
         return;
     }
-    let codePeople: People[];
+
     try {
-        codePeople = await getPeopleFromCoda();
-    } catch (err: any) {
-        console.error("❌ Failed to get people from Coda:", err.message);
-        return;
-    }
-    try {
-        // Fetch existing devices from SurrealDB
-        const results = await db.query<[Device[]]>(`SELECT * FROM ${COLLECTIONS.DEVICES}`);
+        const results = await db.query<[any[]]>(`SELECT * FROM ${COLLECTIONS.DEVICES}`);
         const dbDevices = results[0];
         const dbDevicesMap = new Map(dbDevices.map(d => [d.mac.toLowerCase(), d]));
 
-        // Check for inserts and updates
         for (const codaDevice of codaDevices) {
             const mac = codaDevice.mac.toLowerCase();
-            const person = codePeople.find(p => p.name === codaDevice.user);
-            const existingRecord: any = dbDevicesMap.get(mac);
+            const existingDevice = dbDevicesMap.get(mac);
+            const userRecordId = userMap.get(codaDevice.user);
 
-            if (!existingRecord) {
-                console.log(`➕ Adding new device to SurrealDB: ${codaDevice.user} (${codaDevice.mac})`);
+            if (!userRecordId) {
+                console.warn(`⚠️ User ${codaDevice.user} not found for device ${codaDevice.mac}, skipping device sync.`);
+                continue;
+            }
+
+            const deviceData = {
+                user: userRecordId,
+                description: codaDevice.description,
+                mac: codaDevice.mac
+            };
+
+            if (!existingDevice) {
+                console.log(`➕ Adding new device: ${codaDevice.user}->${codaDevice.description} (${codaDevice.mac})`);
                 await db.query(`CREATE ${COLLECTIONS.DEVICES} CONTENT $data`, {
-                    data: codaDevice
+                    data: deviceData
                 });
             } else {
-                if (existingRecord.user !== codaDevice.user || existingRecord.description !== codaDevice.description || existingRecord.mac !== codaDevice.mac || existingRecord.robinId !== person?.robinId) {
-                    console.log(`🔄 Updating device in SurrealDB: ${codaDevice.user} (${codaDevice.mac})`);
-                    await db.query(`UPDATE ${existingRecord.id} MERGE $data`, {
-                        data: { ...codaDevice, robinId: person?.robinId }
+                if (existingDevice.user !== userRecordId || existingDevice.description !== codaDevice.description || existingDevice.mac !== codaDevice.mac) {
+                    console.log(`🔄 Updating device: ${codaDevice.user}->${codaDevice.description} (${codaDevice.mac})`);
+                    await db.query(`UPDATE ${existingDevice.id} MERGE $data`, {
+                        data: deviceData
                     });
                 }
-                dbDevicesMap.delete(mac); // Remove from map so we know what's left
+                dbDevicesMap.delete(mac);
             }
         }
 
-        // Delete records no longer in Coda (the ones remaining in the map)
         for (const [mac, record] of dbDevicesMap.entries()) {
-            const r = record as any;
-            console.log(`🗑️ Deleting device from SurrealDB (not in Coda): ${r.user} (${r.mac})`);
-            await db.query(`DELETE ${r.id}`);
+            console.log(`🗑️ Deleting device: ${record.user} (${record.mac})`);
+            await db.query(`DELETE ${record.id}`);
         }
-        console.log("✅ Device sync complete.");
 
+        console.log("✅ Sync complete.");
     } catch (err: any) {
-        console.error("❌ Failed to sync devices with SurrealDB:", err.message);
+        console.error("❌ Failed to sync devices:", err.message);
     }
-}
-
-
-
-function mapPeopleToDevices(people: People[], devices: Device[]) {
-    const result: Device[] = [];
-    for (const person of people) {
-        const device = devices.find(d => d.user === person.name);
-        if (device) {
-            result.push({
-                user: person.name,
-                description: device.description,
-                mac: device.mac
-            });
-        }
-    }
-    return result;
 }

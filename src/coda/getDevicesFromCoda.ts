@@ -40,7 +40,7 @@ export async function getPeopleFromCoda(): Promise<People[]> {
             "name": x.values["Name"],
             "robinId": x.values["Robin User ID"]
         } as People;
-    });
+    }).filter(x => !!x.robinId);
     console.log(peoples);
     return peoples;
 }

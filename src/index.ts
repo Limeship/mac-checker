@@ -27,7 +27,7 @@ async function startApp() {
   }
 
   console.log("⏰ Running initial job at", new Date().toISOString());
-  //await runJob(db);
+  await runJob(db);
 
   // Run every 15 minutes
   cron.schedule("*/15 * * * *", async () => {
