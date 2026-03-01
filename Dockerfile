@@ -29,16 +29,21 @@ RUN mkdir -p /data
 VOLUME ["/data"]
 
 # Default env values
-ENV CodaToken=token
-ENV RouterIp=123
-ENV RouterUser=admin    
-ENV RouterPassword=password
-ENV CodaDeviceDocumentId=documentId
-ENV CodaDeviceTableId=tableId
-ENV CodaResultDocumentId=documentId
-ENV CodaResultTableId=tableId
+ENV SurrealUrl=ws://surrealdb:8000/rpc
+ENV SurrealUser=root
+ENV SurrealPass=root
+ENV SurrealNS=mac_checker
+ENV SurrealDB=mac_checker
 
+ENV RouterIp=192.168.1.1
+ENV RouterPort=8443
+ENV RouterUser=admin
+ENV RouterPassword=password
+
+ENV CodaApiToken=your_token_here
+ENV CodaDocumentId=your_doc_id
+ENV CodaDevicesTableId=your_table_id
+ENV CodaPeopleTableId=your_res_doc_id
 
 # Command to run the app
 CMD ["node", "dist/index.js"]
-
