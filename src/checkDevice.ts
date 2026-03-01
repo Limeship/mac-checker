@@ -1,5 +1,4 @@
 import { Controller } from "node-unifi";
-import { type Device } from "./coda/getDevicesFromCoda";
 import { CONFIG } from "./config";
 
 export interface LocalDevice {

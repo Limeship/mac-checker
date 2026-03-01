@@ -50,12 +50,14 @@ async function processLines(filePath: string, db: Surreal) {
         if (!line.trim()) continue;
         try {
             const record = JSON.parse(line);
+            console.log(record);
             let timestamp: Date | string = record.timestamp;
             if (timestamp && typeof timestamp === "object" && "$$date" in (timestamp as any)) {
                 timestamp = new Date((timestamp as any).$$date);
             } else if (timestamp) {
                 timestamp = new Date(timestamp as string | number);
             }
+
 
             // Find the referenced device
             const results = await db.query<[any[]]>(
@@ -73,7 +75,7 @@ async function processLines(filePath: string, db: Surreal) {
             await db.query(`CREATE ${COLLECTIONS.DEVICE_LOGS} CONTENT $data`, {
                 data: {
                     device: dbDevice.id,
-                    timestamp: timestamp instanceof Date ? timestamp.toISOString() : undefined
+                    timestamp: timestamp instanceof Date ? timestamp : undefined
                 }
             });
 
