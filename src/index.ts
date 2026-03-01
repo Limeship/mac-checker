@@ -4,7 +4,7 @@ import { runJob } from "./jobs/job";
 import { initCollections } from "./db/initDb";
 import { syncDevices } from "./db/syncDevices";
 import { CONFIG } from "./config";
-import { getPeopleFromCoda } from "./coda/getDevicesFromCoda";
+import { syncRobinReservations } from "./robin";
 
 const db = new Surreal();
 
@@ -29,13 +29,23 @@ async function startApp() {
   console.log("⏰ Running initial job at", new Date().toISOString());
   await runJob(db);
 
-  // Run every 15 minutes
+  // Run every 15 minutes for office presence
   cron.schedule("*/15 * * * *", async () => {
-    console.log("⏰ Running scheduled job at", new Date().toISOString());
+    console.log("⏰ Running scheduled office job at", new Date().toISOString());
     try {
       await runJob(db);
     } catch (err: any) {
-      console.error("❌ Job error:", err.message);
+      console.error("❌ Office job error:", err.message);
+    }
+  });
+
+  // Run daily at 22:00 for Robin reservations sync
+  cron.schedule("0 22 * * *", async () => {
+    console.log("⏰ Running scheduled Robin sync job at", new Date().toISOString());
+    try {
+      await syncRobinReservations(db);
+    } catch (err: any) {
+      console.error("❌ Robin sync job error:", err.message);
     }
   });
 

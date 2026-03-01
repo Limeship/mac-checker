@@ -1,4 +1,6 @@
 import { CONFIG } from "./config";
+import { Surreal } from "surrealdb";
+import { COLLECTIONS } from "./constants";
 
 interface RobinAuthResponse {
     data: {
@@ -90,25 +92,45 @@ export async function getTodaysReservations(organizationId: string, accessToken:
     return await response.json() as RobinGraphQLResponse;
 }
 
-export async function runRobin() {
+
+import { DbUser, DbDevice } from "./types/db";
+
+export async function syncRobinReservations(db: Surreal) {
     try {
+        console.log('🚀 Starting Robin reservations sync...');
         const email = CONFIG.ROBIN_EMAIL;
         const password = CONFIG.ROBIN_PASSWORD;
         const organizationId = CONFIG.ROBIN_ORGANIZATION_ID;
-        console.log('Logging in to Robin...');
-        const { accessToken, userId } = await loginRobin(email, password, organizationId);
-        console.log(`Success! Logged in as User ID: ${userId}`);
+        const { accessToken } = await loginRobin(email, password, organizationId);
 
-        console.log('Fetching today\'s reservations...');
-        const date = new Date();
-        date.setDate(date.getDate() + 3)
+        // Get all users with a robinId
+        const users = await db.query<[DbUser[]]>(
+            `SELECT id, name, robinId FROM ${COLLECTIONS.USERS} WHERE robinId != NONE`
+        );
 
-        const reservations = await getTodaysReservations(organizationId, accessToken, "3545098", date);
-        console.log('Reservations:', JSON.stringify(reservations, null, 2));
-    } catch (error) {
-        console.error('Error:', error);
+        for (const user of users[0]) {
+            console.log(`Checking reservations for user: ${user.name} (${user.robinId})`);
+            const response = await getTodaysReservations(organizationId, accessToken, user.robinId!, new Date());
+
+            const reservations = response.data.getDeskReservationsByUserId.reservations;
+            if (reservations.length === 0) {
+                console.log(`No reservations for ${user.name}`);
+                continue;
+            }
+
+            for (const res of reservations) {
+                await db.query(`CREATE ${COLLECTIONS.ROBIN_LOGS} CONTENT $data`, {
+                    data: {
+                        user: user.id,
+                        start: new Date(res.startTime),
+                        end: new Date(res.endTime)
+                    }
+                });
+            }
+            console.log(`Logged ${reservations.length} Robin sessions for ${user.name}`);
+        }
+        console.log('✅ Robin reservations sync complete.');
+    } catch (err: any) {
+        console.error('❌ Robin sync error:', err.message);
     }
 }
-
-
-runRobin();

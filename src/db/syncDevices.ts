@@ -1,6 +1,7 @@
 import { Surreal } from "surrealdb";
 import { getDevicesFromCoda, getPeopleFromCoda, type Device, type People } from "../coda/getDevicesFromCoda";
 import { COLLECTIONS } from "../constants";
+import { DbUser, DbDevice } from "../types/db";
 
 export async function syncDevices(db: Surreal) {
     console.log("⏳ Syncing users and devices from Coda to SurrealDB...");
@@ -23,7 +24,7 @@ async function syncUsers(db: Surreal): Promise<Map<string, string> | null> {
     const userMap = new Map<string, string>(); // name -> record id
 
     try {
-        const results = await db.query<[any[]]>(`SELECT * FROM ${COLLECTIONS.USERS}`);
+        const results = await db.query<[DbUser[]]>(`SELECT id, name, robinId FROM ${COLLECTIONS.USERS}`);
         const dbUsers = results[0];
         const dbUsersMap = new Map(dbUsers.map(u => [u.name, u]));
 
@@ -67,7 +68,7 @@ async function syncDevicesInternal(db: Surreal, userMap: Map<string, string>) {
     }
 
     try {
-        const results = await db.query<[any[]]>(`SELECT * FROM ${COLLECTIONS.DEVICES}`);
+        const results = await db.query<[DbDevice[]]>(`SELECT id, user, description, mac FROM ${COLLECTIONS.DEVICES}`);
         const dbDevices = results[0];
         const dbDevicesMap = new Map(dbDevices.map(d => [d.mac.toLowerCase(), d]));
 

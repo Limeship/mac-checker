@@ -3,6 +3,7 @@ import { getDevicesFromCoda } from "../coda/getDevicesFromCoda";
 import type { Device } from "../coda/getDevicesFromCoda"
 import { checkDevice, getLocalDevices } from "../checkDevice";
 import { COLLECTIONS } from "../constants";
+import { DbDevice } from "../types/db";
 
 export interface DeviceLog {
   device: string; // SurrealDB Record ID
@@ -26,8 +27,8 @@ export async function runJob(db: Surreal): Promise<void> {
     if (ok) {
       // Find the device ID first using the MAC address
       try {
-        const results = await db.query<[any[]]>(
-          `SELECT * FROM ${COLLECTIONS.DEVICES} WHERE mac = $mac`,
+        const results = await db.query<[DbDevice[]]>(
+          `SELECT id, user, description, mac FROM ${COLLECTIONS.DEVICES} WHERE mac = $mac`,
           { mac: device.mac }
         );
         const dbDevice = results[0][0];
@@ -39,7 +40,7 @@ export async function runJob(db: Surreal): Promise<void> {
 
         const logData = {
           device: dbDevice.id,
-          timestamp: new Date()
+          timestamp: new Date(),
         };
 
         await db.query(`CREATE ${COLLECTIONS.DEVICE_LOGS} CONTENT $data`, {

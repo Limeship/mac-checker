@@ -3,6 +3,7 @@ import readline from "readline";
 import { Surreal } from "surrealdb";
 import { COLLECTIONS } from "../constants";
 import { CONFIG } from "../config";
+import { DbDevice } from "../types/db";
 
 const NEDB_FILE = "/data/devices.db";
 
@@ -60,8 +61,8 @@ async function processLines(filePath: string, db: Surreal) {
 
 
             // Find the referenced device
-            const results = await db.query<[any[]]>(
-                `SELECT * FROM ${COLLECTIONS.DEVICES} WHERE mac = $mac`,
+            const results = await db.query<[DbDevice[]]>(
+                `SELECT id, user, description, mac FROM ${COLLECTIONS.DEVICES} WHERE mac = $mac`,
                 { mac: record.mac }
             );
             const dbDevice = results[0][0];

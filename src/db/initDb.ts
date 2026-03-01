@@ -19,6 +19,11 @@ export async function initCollections(db: Surreal) {
             DEFINE TABLE IF NOT EXISTS ${COLLECTIONS.DEVICE_LOGS} SCHEMALESS;
             DEFINE FIELD IF NOT EXISTS device ON TABLE ${COLLECTIONS.DEVICE_LOGS} TYPE record<${COLLECTIONS.DEVICES}>;
             DEFINE FIELD IF NOT EXISTS timestamp ON TABLE ${COLLECTIONS.DEVICE_LOGS} TYPE datetime;
+
+            DEFINE TABLE IF NOT EXISTS ${COLLECTIONS.ROBIN_LOGS} SCHEMALESS;
+            DEFINE FIELD IF NOT EXISTS user ON TABLE ${COLLECTIONS.ROBIN_LOGS} TYPE record<${COLLECTIONS.USERS}>;
+            DEFINE FIELD IF NOT EXISTS start ON TABLE ${COLLECTIONS.ROBIN_LOGS} TYPE datetime;
+            DEFINE FIELD IF NOT EXISTS end ON TABLE ${COLLECTIONS.ROBIN_LOGS} TYPE datetime;
         `);
         console.log("✅ SurrealDB tables initialized.");
     } catch (err: any) {
