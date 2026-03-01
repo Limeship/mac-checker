@@ -1,38 +1,24 @@
-import PocketBase, { CollectionModel } from "pocketbase";
+import { Surreal } from "surrealdb";
 import { COLLECTIONS } from "../constants";
 
-async function ensureCollection(pb: PocketBase, name: string, fields: any[]): Promise<CollectionModel | undefined> {
+export async function initCollections(db: Surreal) {
+    console.log("⏳ Initializing SurrealDB tables...");
     try {
-        const collection = await pb.collections.getOne(name);
-        console.log(`✅ Collection '${name}' exists.`);
-        return collection;
-    } catch {
-        console.log(`⏳ Creating '${name}' collection...`);
-        try {
-            const collection = await pb.collections.create({ name, type: "base", fields });
-            console.log(`✅ Collection '${name}' created.`);
-            return collection;
-        } catch (err: any) {
-            console.error(`❌ Failed to create collection '${name}':`, err.message);
-            throw err;
-        }
-    }
-}
+        await db.query(`
+            DEFINE TABLE IF NOT EXISTS ${COLLECTIONS.DEVICES} SCHEMALESS;
+            DEFINE FIELD IF NOT EXISTS user ON TABLE ${COLLECTIONS.DEVICES} TYPE string;
+            DEFINE FIELD IF NOT EXISTS description ON TABLE ${COLLECTIONS.DEVICES} TYPE string;
+            DEFINE FIELD IF NOT EXISTS mac ON TABLE ${COLLECTIONS.DEVICES} TYPE string;
+            DEFINE FIELD IF NOT EXISTS robinId ON TABLE ${COLLECTIONS.DEVICES} TYPE string;
+            DEFINE INDEX IF NOT EXISTS mac_idx ON TABLE ${COLLECTIONS.DEVICES} COLUMNS mac UNIQUE;
 
-export async function initCollections(pb: PocketBase) {
-    try {
-        await ensureCollection(pb, COLLECTIONS.DEVICES, [
-            { name: "user", type: "text", required: true, presentable: true },
-            { name: "description", type: "text", required: true, presentable: true },
-            { name: "mac", type: "text", required: true, presentable: false }
-        ]);
-
-        await ensureCollection(pb, COLLECTIONS.DEVICE_LOGS, [
-            { name: "device", type: "relation", options: { collectionId: COLLECTIONS.DEVICES, maxSelect: 1 }, required: true },
-            { name: "timestamp", type: "date", required: true }
-        ]);
-    } catch (err) {
-        // If one collection fails to create, we stop the initialization
-        console.error("❌ Database initialization sequence halted due to an error.");
+            DEFINE TABLE IF NOT EXISTS ${COLLECTIONS.DEVICE_LOGS} SCHEMALESS;
+            DEFINE FIELD IF NOT EXISTS device ON TABLE ${COLLECTIONS.DEVICE_LOGS} TYPE record<${COLLECTIONS.DEVICES}>;
+            DEFINE FIELD IF NOT EXISTS timestamp ON TABLE ${COLLECTIONS.DEVICE_LOGS} TYPE datetime;
+        `);
+        console.log("✅ SurrealDB tables initialized.");
+    } catch (err: any) {
+        console.error("❌ Failed to initialize SurrealDB tables:", err.message);
+        throw err;
     }
 }

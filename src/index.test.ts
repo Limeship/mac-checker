@@ -1,5 +1,5 @@
 import cron from "node-cron";
-import PocketBase from "pocketbase";
+import { Surreal } from "surrealdb";
 
 jest.mock("node-cron", () => {
     return {
@@ -7,16 +7,23 @@ jest.mock("node-cron", () => {
     };
 });
 
-jest.mock("pocketbase", () => {
-    return jest.fn().mockImplementation(() => {
-        return {
-            admins: { authWithPassword: jest.fn().mockResolvedValue({}) }
-        };
-    });
+jest.mock("surrealdb", () => {
+    return {
+        Surreal: jest.fn().mockImplementation(() => {
+            return {
+                connect: jest.fn().mockResolvedValue(undefined),
+                signin: jest.fn().mockResolvedValue({}),
+                use: jest.fn().mockResolvedValue({}),
+                close: jest.fn().mockResolvedValue(undefined)
+            };
+        })
+    };
 });
 
-jest.mock("./uploadJob", () => ({ uploadJob: jest.fn() }));
-jest.mock("./job", () => ({ runJob: jest.fn() }));
+jest.mock("./jobs/uploadJob", () => ({ uploadJob: jest.fn() }));
+jest.mock("./jobs/job", () => ({ runJob: jest.fn() }));
+jest.mock("./db/initDb", () => ({ initCollections: jest.fn().mockResolvedValue(undefined) }));
+jest.mock("./db/syncDevices", () => ({ syncDevicesToPb: jest.fn().mockResolvedValue(undefined) }));
 
 describe("index.ts", () => {
     let processExitSpy: jest.SpyInstance;
@@ -41,23 +48,21 @@ describe("index.ts", () => {
         consoleErrorSpy.mockRestore();
         process.stdin.resume = originalResume;
 
-        // Remove index.ts from require cache so we can re-evaluate it
         const indexModule = require.resolve("./index");
         if (require.cache[indexModule]) {
             delete require.cache[indexModule];
         }
     });
 
-    it("should initialize PocketBase admin auth and schedule jobs", async () => {
-        // Load index.ts dynamically
+    it("should initialize SurrealDB auth and schedule jobs", async () => {
         require("./index");
 
-        // Allow immediate promises to flush
         await new Promise(process.nextTick);
 
-        expect(PocketBase).toHaveBeenCalled();
-        const pbInstance = (PocketBase as jest.Mock).mock.results[0].value;
-        expect(pbInstance.admins.authWithPassword).toHaveBeenCalled();
+        expect(Surreal).toHaveBeenCalled();
+        const dbInstance = ((Surreal as unknown) as jest.Mock).mock.results[0].value;
+        expect(dbInstance.connect).toHaveBeenCalled();
+        expect(dbInstance.signin).toHaveBeenCalled();
 
         expect(cron.schedule).toHaveBeenCalledTimes(2);
         expect(cron.schedule).toHaveBeenCalledWith("*/15 * * * *", expect.any(Function));

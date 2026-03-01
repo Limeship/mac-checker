@@ -1,33 +1,35 @@
 version: '3.8'
 
 services:
-  pocketbase:
-    image: ghcr.io/muchobien/pocketbase:latest
-    container_name: mac-checker-pb
-    command: serve --http=0.0.0.0:8090
+  surrealdb:
+    image: surrealdb/surrealdb:v2.1.4
+    container_name: mac-checker-surreal
+    command: start --log trace --user root --pass root file://data/surreal.db
     ports:
-      - "8090:8090"
+      - "8000:8000"
     volumes:
-      - ./pb_data:/pb_data
+      - ./surreal_data:/data
     restart: unless-stopped
 
   checker:
     build: .
     container_name: mac-checker-app
     depends_on:
-      - pocketbase
+      - surrealdb
     environment:
-      - PB_URL=http://localhost:8090
-      - PB_ADMIN_EMAIL=admin@example.com
-      - PB_ADMIN_PASSWORD=change_me_12345
-      - CodaToken=your_token_here
-      - CodaDeviceDocumentId=your_doc_id
-      - CodaDeviceTableId=your_table_id
-      - CodaResultDocumentId=your_res_doc_id
-      - CodaResultTableId=your_res_table_id
+      - SurrealUrl=ws://surrealdb:8000/rpc
+      - SurrealUser=root
+      - SurrealPass=root
+      - SurrealNS=mac_checker
+      - SurrealDB=mac_checker
       - RouterIp=192.168.1.1
       - RouterUser=admin
       - RouterPassword=password
+      - RouterPort=8443
+      - CodaApiToken=your_token_here
+      - CodaDocumentId=your_doc_id
+      - CodaDevicesTableId=your_table_id
+      - CodaPeopleTableId=your_res_doc_id
     volumes:
       - ./data:/data  # Kept in case old NeDB file needs to be imported
     restart: unless-stopped

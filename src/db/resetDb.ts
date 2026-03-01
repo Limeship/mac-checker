@@ -1,44 +1,45 @@
-import PocketBase from "pocketbase";
+import { Surreal } from "surrealdb";
 import { COLLECTIONS } from "../constants";
 import { initCollections } from "./initDb";
 import { CONFIG } from "../config";
 
 export async function resetDb() {
-    const pb = new PocketBase(CONFIG.PB_URL);
+    const db = new Surreal();
 
-    console.log(`🚀 Connecting to PocketBase at ${CONFIG.PB_URL}`);
+    console.log(`🚀 Connecting to SurrealDB at ${CONFIG.SURREAL_URL}`);
     try {
-        await pb.admins.authWithPassword(CONFIG.PB_ADMIN_EMAIL, CONFIG.PB_ADMIN_PASSWORD);
-        console.log("✅ Authenticated as admin.");
+        await db.connect(CONFIG.SURREAL_URL);
+        await db.signin({
+            username: CONFIG.SURREAL_USER,
+            password: CONFIG.SURREAL_PASS,
+        });
+        await db.use({ namespace: CONFIG.SURREAL_NS, database: CONFIG.SURREAL_DB });
+        console.log("✅ Authenticated.");
     } catch (e: any) {
-        console.error("❌ Failed to authenticate with PocketBase:", e.message);
-        console.error("Make sure PocketBase is running and the admin account exists.");
+        console.error("❌ Failed to authenticate with SurrealDB:", e.message);
         process.exit(1);
     }
 
-    // Delete device logs first (since it depends on devices via the relation)
     try {
-        const logsCollection = await pb.collections.getOne(COLLECTIONS.DEVICE_LOGS);
-        console.log(`⏳ Deleting collection '${COLLECTIONS.DEVICE_LOGS}'...`);
-        await pb.collections.delete(logsCollection.id);
-        console.log(`✅ Collection '${COLLECTIONS.DEVICE_LOGS}' deleted.`);
+        console.log(`⏳ Removing table '${COLLECTIONS.DEVICE_LOGS}'...`);
+        await db.query(`REMOVE TABLE ${COLLECTIONS.DEVICE_LOGS}`);
+        console.log(`✅ Table '${COLLECTIONS.DEVICE_LOGS}' removed.`);
     } catch (e) {
-        console.log(`ℹ️ Collection '${COLLECTIONS.DEVICE_LOGS}' does not exist or already deleted.`);
+        console.log(`ℹ️ Table '${COLLECTIONS.DEVICE_LOGS}' does not exist or already removed.`);
     }
 
-    // Delete devices
     try {
-        const devicesCollection = await pb.collections.getOne(COLLECTIONS.DEVICES);
-        console.log(`⏳ Deleting collection '${COLLECTIONS.DEVICES}'...`);
-        await pb.collections.delete(devicesCollection.id);
-        console.log(`✅ Collection '${COLLECTIONS.DEVICES}' deleted.`);
+        console.log(`⏳ Removing table '${COLLECTIONS.DEVICES}'...`);
+        await db.query(`REMOVE TABLE ${COLLECTIONS.DEVICES}`);
+        console.log(`✅ Table '${COLLECTIONS.DEVICES}' removed.`);
     } catch (e) {
-        console.log(`ℹ️ Collection '${COLLECTIONS.DEVICES}' does not exist or already deleted.`);
+        console.log(`ℹ️ Table '${COLLECTIONS.DEVICES}' does not exist or already removed.`);
     }
 
-    console.log("⏳ Re-initializing collections...");
-    await initCollections(pb);
+    console.log("⏳ Re-initializing tables...");
+    await initCollections(db);
     console.log("✅ Database reset complete!");
+    await db.close();
 }
 
 if (require.main === module) {

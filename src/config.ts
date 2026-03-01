@@ -2,21 +2,22 @@ import dotenv from "dotenv";
 dotenv.config();
 
 export const CONFIG = {
-    // PocketBase Configuration
-    PB_URL: process.env.PB_URL || "http://localhost:8090",
-    PB_ADMIN_EMAIL: process.env.PB_ADMIN_EMAIL || "admin@example.com",
-    PB_ADMIN_PASSWORD: process.env.PB_ADMIN_PASSWORD || "change_me_12345",
+    // SurrealDB Configuration
+    SURREAL_URL: process.env.SurrealUrl || "ws://localhost:8080/rpc",
+    SURREAL_USER: process.env.SurrealUser || "root",
+    SURREAL_PASS: process.env.SurrealPass || "root",
+    SURREAL_NS: process.env.SurrealNS || "mac_checker",
+    SURREAL_DB: process.env.SurrealDB || "mac_checker",
 
     // Coda Configuration
-    CODA_API_KEY: process.env.CODA_API_KEY || "",
-    CODA_DOC_ID: process.env.CODA_DOC_ID || "",
-    CODA_TABLE_ID: process.env.CODA_TABLE_ID || "",
-    CODA_UPLOADS_TABLE_ID: process.env.CODA_UPLOADS_TABLE_ID || "",
+    CODA_API_TOKEN: process.env.CodaApiToken || "",
+    CODA_DOCUMENT_ID: process.env.CodaDocumentId || "",
+    CODA_DEVICES_TABLE_ID: process.env.CodaDevicesTableId || "",
+    CODA_PEOPLE_TABLE_ID: process.env.CodaPeopleTableId || "",
 
     // UniFi Configuration
-    UNIFI_HOST: process.env.UNIFI_HOST || "192.168.1.1",
-    UNIFI_USERNAME: process.env.UNIFI_USERNAME || "admin",
-    UNIFI_PASSWORD: process.env.UNIFI_PASSWORD || "password",
-    UNIFI_PORT: parseInt(process.env.UNIFI_PORT || "8443", 10),
-    UNIFI_SITE: process.env.UNIFI_SITE || "default",
+    UNIFI_HOST: process.env.RouterIp || "192.168.1.1",
+    UNIFI_USERNAME: process.env.RouterUser || "admin",
+    UNIFI_PASSWORD: process.env.RouterPassword || "password",
+    UNIFI_PORT: parseInt(process.env.RouterPort || "8443", 10),
 } as const;

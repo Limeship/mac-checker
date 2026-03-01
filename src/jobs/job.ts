@@ -1,15 +1,15 @@
+import { Surreal } from "surrealdb";
 import { getDevicesFromCoda } from "../coda/getDevicesFromCoda";
 import type { Device } from "../coda/getDevicesFromCoda"
 import { checkDevice, getLocalDevices } from "../checkDevice";
-import PocketBase from "pocketbase";
 import { COLLECTIONS } from "../constants";
 
 export interface DeviceLog {
-  device: string; // PB Relation ID
+  device: string; // SurrealDB Record ID
   timestamp: Date | string;
 }
 
-export async function runJob(pb: PocketBase): Promise<void> {
+export async function runJob(db: Surreal): Promise<void> {
   let devices: Device[];
 
   try {
@@ -18,26 +18,37 @@ export async function runJob(pb: PocketBase): Promise<void> {
     console.error("❌ Error reading devices.txt:", (err as Error).message);
     return;
   }
+
   const localDevices = await getLocalDevices();
+
   for (const device of devices) {
     const ok = await checkDevice(localDevices, device.mac);
     if (ok) {
-      // Find the PB device ID first using the MAC address
-      let pbDeviceRecord;
+      // Find the device ID first using the MAC address
       try {
-        pbDeviceRecord = await pb.collection(COLLECTIONS.DEVICES).getFirstListItem(`mac="${device.mac}"`);
-      } catch (err) {
-        console.warn(`⚠️ PB record not found for device ${device.description} (${device.mac}) even though it passed the check.`);
-        continue;
-      }
+        const results = await db.query<[any[]]>(
+          `SELECT * FROM ${COLLECTIONS.DEVICES} WHERE mac = $mac`,
+          { mac: device.mac }
+        );
+        const dbDevice = results[0][0];
 
-      const deviceLog: DeviceLog = {
-        device: pbDeviceRecord.id,
-        timestamp: new Date().toISOString()
-      };
-      console.log(deviceLog);
-      await pb.collection(COLLECTIONS.DEVICE_LOGS).create(deviceLog);
-      console.log(`✅ ${device.user} (${device.description}) passed at ${deviceLog.timestamp}`);
+        if (!dbDevice) {
+          console.warn(`⚠️ SurrealDB record not found for device ${device.description} (${device.mac}) even though it passed the check.`);
+          continue;
+        }
+
+        const logData = {
+          device: dbDevice.id,
+          timestamp: new Date()
+        };
+
+        await db.query(`CREATE ${COLLECTIONS.DEVICE_LOGS} CONTENT $data`, {
+          data: logData
+        });
+        console.log(`✅ ${device.user} (${device.description}) passed at ${logData.timestamp}`);
+      } catch (err: any) {
+        console.error(`❌ Error creating log for ${device.mac}:`, err.message);
+      }
     } else {
       console.log(`❌ ${device.user} (${device.description}) did not pass`);
     }

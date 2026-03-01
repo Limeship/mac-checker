@@ -1,40 +1,35 @@
 import { migrateDb } from "./importDb";
-import PocketBase from "pocketbase";
+import { Surreal } from "surrealdb";
 import fs from "fs";
 import readline from "readline";
 import { COLLECTIONS } from "../constants";
 
-jest.mock("pocketbase");
+jest.mock("surrealdb", () => {
+    return {
+        Surreal: jest.fn().mockImplementation(() => ({
+            connect: jest.fn().mockResolvedValue(undefined),
+            signin: jest.fn().mockResolvedValue({}),
+            use: jest.fn().mockResolvedValue({}),
+            query: jest.fn().mockResolvedValue([[]]),
+            close: jest.fn().mockResolvedValue(undefined)
+        }))
+    };
+});
 jest.mock("fs");
 jest.mock("readline");
 jest.mock("dotenv", () => ({ config: jest.fn() }));
 
 describe("importDb.ts", () => {
-    let mockPbInstance: any;
+    let mockDbInstance: any;
 
     beforeEach(() => {
         jest.clearAllMocks();
 
-        mockPbInstance = {
-            admins: { authWithPassword: jest.fn().mockResolvedValue({}) },
-            collections: {
-                getOne: jest.fn().mockResolvedValue({}),
-                create: jest.fn().mockResolvedValue({})
-            },
-            collection: jest.fn().mockReturnValue({
-                create: jest.fn().mockResolvedValue({}),
-                getFirstListItem: jest.fn().mockResolvedValue({ id: "mock_device_id" })
-            })
-        };
+        const { Surreal: MockSurreal } = require("surrealdb");
+        mockDbInstance = new MockSurreal();
+        (MockSurreal as jest.Mock).mockReturnValue(mockDbInstance);
 
-        (PocketBase as unknown as jest.Mock).mockImplementation(() => mockPbInstance);
-
-        // Mock fs exitsSync to return true for the local DB to avoid test hangs/issues with finding the file
-        (fs.existsSync as jest.Mock).mockImplementation((path) => {
-            return path === "./data/devices.db";
-        });
-
-        // Mock stream and readline
+        (fs.existsSync as jest.Mock).mockImplementation((path) => path === "./data/devices.db");
         (fs.createReadStream as jest.Mock).mockReturnValue({});
 
         const asyncIterable = {
@@ -54,7 +49,6 @@ describe("importDb.ts", () => {
 
         (readline.createInterface as jest.Mock).mockReturnValue(asyncIterable);
 
-        // Prevent process.exit from terminating the test runner
         jest.spyOn(process, "exit").mockImplementation((() => { }) as any);
         jest.spyOn(console, "log").mockImplementation(() => { });
         jest.spyOn(console, "error").mockImplementation(() => { });
@@ -64,28 +58,28 @@ describe("importDb.ts", () => {
         jest.restoreAllMocks();
     });
 
-    it("should authenticate, initialize collection if needed, and import data", async () => {
-        // mock getOne to fail so we test the creation path
-        mockPbInstance.collections.getOne.mockRejectedValue(new Error("Not found"));
+    it("should connect, find the device, and import data", async () => {
+        // Mock device lookup results
+        mockDbInstance.query.mockResolvedValueOnce([[{ id: "mc_devices:mock_id" }]] as any);
 
         await migrateDb();
 
-        expect(mockPbInstance.admins.authWithPassword).toHaveBeenCalled();
-        expect(mockPbInstance.collections.getOne).toHaveBeenCalledWith(COLLECTIONS.DEVICE_LOGS);
-        expect(mockPbInstance.collections.create).toHaveBeenCalled();
+        expect(mockDbInstance.connect).toHaveBeenCalled();
+        expect(mockDbInstance.signin).toHaveBeenCalled();
+        expect(mockDbInstance.use).toHaveBeenCalled();
 
         expect(fs.createReadStream).toHaveBeenCalledWith("./data/devices.db");
 
-        // 1 record created
-        expect(mockPbInstance.collection).toHaveBeenCalledWith(COLLECTIONS.DEVICE_LOGS);
-        expect(mockPbInstance.collection().create).toHaveBeenCalledTimes(1);
-    });
+        expect(mockDbInstance.query).toHaveBeenCalledWith(
+            expect.stringContaining(`SELECT * FROM ${COLLECTIONS.DEVICES} WHERE mac = $mac`),
+            { mac: "MAC1" }
+        );
 
-    it("should process correctly if collection already exists", async () => {
-        // Leave getOne resolving normally 
-        await migrateDb();
-
-        expect(mockPbInstance.collections.create).not.toHaveBeenCalled();
-        expect(mockPbInstance.collection().create).toHaveBeenCalledTimes(1);
+        expect(mockDbInstance.query).toHaveBeenCalledWith(
+            expect.stringContaining(`CREATE ${COLLECTIONS.DEVICE_LOGS} CONTENT $data`),
+            expect.objectContaining({
+                data: expect.objectContaining({ device: "mc_devices:mock_id" })
+            })
+        );
     });
 });

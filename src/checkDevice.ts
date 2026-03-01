@@ -12,10 +12,11 @@ export async function getLocalDevices(): Promise<LocalDevice[]> {
     const controller = new Controller({
         host: CONFIG.UNIFI_HOST,
         port: CONFIG.UNIFI_PORT,
+        sslverify: false
     });
 
     await controller.login(CONFIG.UNIFI_USERNAME, CONFIG.UNIFI_PASSWORD);
-    const clients = await controller.getClientDevices(CONFIG.UNIFI_SITE);
+    const clients = await controller.getClientDevices();
     const localDevices = clients.map((x: any) => {
         return {
             name: x.hostname,
