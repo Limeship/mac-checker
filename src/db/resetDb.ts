@@ -1,19 +1,14 @@
 import { Surreal } from "surrealdb";
+import { database } from "./database";
 import { COLLECTIONS } from "../constants";
 import { initCollections } from "./initDb";
-import { CONFIG } from "../config";
 
 export async function resetDb() {
-    const db = new Surreal();
-
-    console.log(`🚀 Connecting to SurrealDB at ${CONFIG.SURREAL_URL}`);
+    console.log(`🚀 Starting database reset...`);
+    let db: Surreal;
     try {
-        await db.connect(CONFIG.SURREAL_URL);
-        await db.signin({
-            username: CONFIG.SURREAL_USER,
-            password: CONFIG.SURREAL_PASS,
-        });
-        await db.use({ namespace: CONFIG.SURREAL_NS, database: CONFIG.SURREAL_DB });
+        await database.connect();
+        db = database.getInstance();
         console.log("✅ Authenticated.");
     } catch (e: any) {
         console.error("❌ Failed to authenticate with SurrealDB:", e.message);

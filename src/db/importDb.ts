@@ -1,6 +1,7 @@
 import fs from "fs";
 import readline from "readline";
 import { Surreal } from "surrealdb";
+import { database } from "./database";
 import { COLLECTIONS } from "../constants";
 import { CONFIG } from "../config";
 import { DbDevice } from "../types/db";
@@ -8,34 +9,28 @@ import { DbDevice } from "../types/db";
 const NEDB_FILE = "/data/devices.db";
 
 export async function migrateDb() {
-    const db = new Surreal();
-
-    console.log(`🚀 Connecting to SurrealDB at ${CONFIG.SURREAL_URL}`);
+    console.log(`🚀 Starting migration...`);
     try {
-        await db.connect(CONFIG.SURREAL_URL);
-        await db.signin({
-            username: CONFIG.SURREAL_USER,
-            password: CONFIG.SURREAL_PASS,
-        });
-        await db.use({ namespace: CONFIG.SURREAL_NS, database: CONFIG.SURREAL_DB });
+        await database.connect();
+        const db = database.getInstance();
         console.log("✅ Connected to SurrealDB.");
+
+        if (!fs.existsSync(NEDB_FILE)) {
+            const LOCAL_NEDB_FILE = "./data/devices.db";
+            if (fs.existsSync(LOCAL_NEDB_FILE)) {
+                console.log(`Found local db at ${LOCAL_NEDB_FILE}`);
+                await processLines(LOCAL_NEDB_FILE, db);
+            } else {
+                console.log(`ℹ️ No NeDB file found at ${NEDB_FILE} or ${LOCAL_NEDB_FILE}. Skipping migration.`);
+                return;
+            }
+        } else {
+            await processLines(NEDB_FILE, db);
+        }
     } catch (e: any) {
-        console.error("❌ Failed to connect to SurrealDB:", e.message);
+        console.error("❌ Migration failed:", e.message);
         process.exit(1);
     }
-
-    if (!fs.existsSync(NEDB_FILE)) {
-        const LOCAL_NEDB_FILE = "./data/devices.db";
-        if (fs.existsSync(LOCAL_NEDB_FILE)) {
-            console.log(`Found local db at ${LOCAL_NEDB_FILE}`);
-            return processLines(LOCAL_NEDB_FILE, db);
-        } else {
-            console.log(`ℹ️ No NeDB file found at ${NEDB_FILE} or ${LOCAL_NEDB_FILE}. Skipping migration.`);
-            return;
-        }
-    }
-
-    await processLines(NEDB_FILE, db);
 }
 
 async function processLines(filePath: string, db: Surreal) {

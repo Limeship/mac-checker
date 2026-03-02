@@ -1,5 +1,5 @@
 import { Surreal } from "surrealdb";
-import { getDevicesFromCoda, getPeopleFromCoda, type Device, type People } from "../coda/getDevicesFromCoda";
+import { codaService, type Device, type People } from "../services/coda.service";
 import { COLLECTIONS } from "../constants";
 import { DbUser, DbDevice } from "../types/db";
 
@@ -15,7 +15,7 @@ export async function syncDevices(db: Surreal) {
 async function syncUsers(db: Surreal): Promise<Map<string, string> | null> {
     let codaPeople: People[];
     try {
-        codaPeople = await getPeopleFromCoda();
+        codaPeople = await codaService.getPeople();
     } catch (err: any) {
         console.error("❌ Failed to get people from Coda:", err.message);
         return null;
@@ -47,7 +47,7 @@ async function syncUsers(db: Surreal): Promise<Map<string, string> | null> {
                 dbUsersMap.delete(person.name);
             }
         }
-        for (const [mac, record] of dbUsersMap.entries()) {
+        for (const [name, record] of dbUsersMap.entries()) {
             console.log(`🗑️ Deleting user: ${record.name} (${record.robinId})`);
             await db.query(`DELETE ${record.id}`);
         }
@@ -61,7 +61,7 @@ async function syncUsers(db: Surreal): Promise<Map<string, string> | null> {
 async function syncDevicesInternal(db: Surreal, userMap: Map<string, string>) {
     let codaDevices: Device[];
     try {
-        codaDevices = await getDevicesFromCoda();
+        codaDevices = await codaService.getDevices();
     } catch (err: any) {
         console.error("❌ Failed to get devices from Coda:", err.message);
         return;
@@ -105,7 +105,7 @@ async function syncDevicesInternal(db: Surreal, userMap: Map<string, string>) {
         }
 
         for (const [mac, record] of dbDevicesMap.entries()) {
-            console.log(`🗑️ Deleting device: ${record.user} (${record.mac})`);
+            console.log(`🗑️ Deleting device: ${record.description} (${record.mac})`);
             await db.query(`DELETE ${record.id}`);
         }
 

@@ -1,8 +1,8 @@
 import { getLocalDevices, checkDevice } from "./checkDevice";
 import UnifiEvents from "node-unifi";
-import { CONFIG } from "./config";
+import { CONFIG } from "../config";
 
-jest.mock("./config", () => ({
+jest.mock("../config", () => ({
     CONFIG: {
         UNIFI_HOST: "127.0.0.1",
         UNIFI_PORT: 8443,

@@ -1,5 +1,5 @@
 import { Controller } from "node-unifi";
-import { CONFIG } from "./config";
+import { CONFIG } from "../config";
 
 export interface LocalDevice {
     name: string;

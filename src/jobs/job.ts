@@ -1,22 +1,16 @@
 import { Surreal } from "surrealdb";
-import { getDevicesFromCoda } from "../coda/getDevicesFromCoda";
-import type { Device } from "../coda/getDevicesFromCoda"
-import { checkDevice, getLocalDevices } from "../checkDevice";
+import { codaService, type Device } from "../services/coda.service";
+import { checkDevice, getLocalDevices } from "../utils/checkDevice";
 import { COLLECTIONS } from "../constants";
 import { DbDevice } from "../types/db";
-
-export interface DeviceLog {
-  device: string; // SurrealDB Record ID
-  timestamp: Date | string;
-}
 
 export async function runJob(db: Surreal): Promise<void> {
   let devices: Device[];
 
   try {
-    devices = await getDevicesFromCoda();
+    devices = await codaService.getDevices();
   } catch (err) {
-    console.error("❌ Error reading devices.txt:", (err as Error).message);
+    console.error("❌ Error fetching devices from Coda:", (err as Error).message);
     return;
   }
 
@@ -25,7 +19,6 @@ export async function runJob(db: Surreal): Promise<void> {
   for (const device of devices) {
     const ok = await checkDevice(localDevices, device.mac);
     if (ok) {
-      // Find the device ID first using the MAC address
       try {
         const results = await db.query<[DbDevice[]]>(
           `SELECT id, user, description, mac FROM ${COLLECTIONS.DEVICES} WHERE mac = $mac`,
