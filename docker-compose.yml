@@ -30,6 +30,9 @@ services:
       - CodaDocumentId=your_doc_id
       - CodaDevicesTableId=your_table_id
       - CodaPeopleTableId=your_res_doc_id
+      - API_KEYS=sample_key_1,sample_key_2
+    ports:
+      - "3000:3000"
     volumes:
       - ./data:/data  # Kept in case old NeDB file needs to be imported
     restart: unless-stopped

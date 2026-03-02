@@ -25,4 +25,7 @@ export const CONFIG = {
     ROBIN_ORGANIZATION_ID: process.env.RobinOrganizationId || "",
     ROBIN_EMAIL: process.env.RobinEmail || "",
     ROBIN_PASSWORD: process.env.RobinPassword || "",
+
+    // API Keys
+    API_KEYS: (process.env.ApiKeys || "").split(",").filter(key => key.trim() !== ""),
 } as const;
