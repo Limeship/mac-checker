@@ -1,13 +1,21 @@
-FROM oven/bun:1-alpine
-
+# Build stage
+FROM oven/bun:1-alpine as build
 WORKDIR /app
-
-# Install dependencies
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
-
-# Copy source files
 COPY src ./src
+# Build the application
+RUN bun run build
+
+# Production stage
+FROM oven/bun:1-alpine
+WORKDIR /app
+
+# Copy the bundled code
+COPY --from=build /app/dist/index.js ./index.js
+# Since we externalized deasync, we need package.json and bun install --production
+COPY package.json bun.lock ./
+RUN bun install --production
 
 # Expose Hono server port
 EXPOSE 3000
@@ -35,5 +43,5 @@ ENV RobinPassword=your_password
 
 ENV ApiKeys=sample_key_1,sample_key_2
 
-# Command to run the app
-CMD ["bun", "src/index.ts"]
+# Command to run the bundled app
+CMD ["bun", "run", "index.js"]

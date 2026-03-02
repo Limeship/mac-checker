@@ -9,6 +9,7 @@
     "migrate": "bun src/db/importDb.ts",
     "robin": "bun src/robin.ts",
     "reset-db": "bun src/db/resetDb.ts",
+    "build": "bun build ./src/index.ts --outdir ./dist --target bun --external deasync",
     "test": "bun test"
   },
   "dependencies": {
