@@ -14,8 +14,6 @@
   },
   "dependencies": {
     "coda-js": "4.2.1",
-    "dotenv": "^17.2.3",
-    "eventsource": "^4.1.0",
     "hono": "^4.12.3",
     "node-cron": "^4.2.1",
     "node-unifi": "^2.5.1",

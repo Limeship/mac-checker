@@ -1,6 +1,3 @@
-import dotenv from "dotenv";
-dotenv.config();
-
 export const CONFIG = {
     // SurrealDB Configuration
     SURREAL_URL: process.env.SurrealUrl || "ws://localhost:8080/rpc",
