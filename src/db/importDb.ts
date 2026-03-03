@@ -1,5 +1,4 @@
 import fs from "fs";
-import readline from "readline";
 import { Surreal } from "surrealdb";
 import { database } from "./database";
 import { COLLECTIONS } from "../constants";
@@ -35,18 +34,13 @@ export async function migrateDb() {
 
 async function processLines(filePath: string, db: Surreal) {
     console.log(`⏳ Starting migration from ${filePath}...`);
-    const fileStream = fs.createReadStream(filePath);
-    const rl = readline.createInterface({
-        input: fileStream,
-        crlfDelay: Infinity
-    });
-
+    const content = fs.readFileSync(filePath, 'utf8');
+    const lines = content.split(/\r?\n/);
     let count = 0;
-    for await (const line of rl) {
+    for (const line of lines) {
         if (!line.trim()) continue;
         try {
             const record = JSON.parse(line);
-            console.log(record);
             let timestamp: Date | string = record.timestamp;
             if (timestamp && typeof timestamp === "object" && "$$date" in (timestamp as any)) {
                 timestamp = new Date((timestamp as any).$$date);
