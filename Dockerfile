@@ -1,44 +1,47 @@
-# Stage 1: Build
-FROM node:22-alpine AS build
-
-# Set working directory
+# Build stage
+FROM oven/bun:1-alpine as build
 WORKDIR /app
-
-# Install dependencies
-COPY package*.json tsconfig.json ./
-RUN npm install
-
-# Copy source files
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
 COPY src ./src
+# Build the application
+RUN bun run build
 
-# Compile TypeScript to JavaScript
-RUN npm run build
-
-# Stage 2: Production image
-FROM node:22-alpine AS production
-
+# Production stage
+FROM oven/bun:1-alpine
 WORKDIR /app
 
-# Copy only necessary files from build stage
-COPY package*.json ./
-COPY --from=build /app/dist ./dist
-RUN npm install --production
+# Copy the bundled code
+COPY --from=build /app/dist/index.js ./index.js
+# Since we externalized deasync, we need package.json and bun install --production
+COPY package.json bun.lock ./
+RUN bun install --production
 
-# Create volume directory
-RUN mkdir -p /data
-VOLUME ["/data"]
+# Expose Hono server port
+EXPOSE 3000
 
 # Default env values
-ENV CodaToken=token
-ENV RouterIp=123
-ENV RouterUser=admin    
+ENV SurrealUrl=ws://surrealdb:8000/rpc
+ENV SurrealUser=root
+ENV SurrealPass=root
+ENV SurrealNS=mac_checker
+ENV SurrealDB=mac_checker
+
+ENV CodaApiToken=your_token_here
+ENV CodaDocumentId=your_doc_id
+ENV CodaDevicesTableId=your_table_id
+ENV CodaPeopleTableId=your_res_doc_id
+
+ENV RouterIp=192.168.1.1
+ENV RouterPort=8443
+ENV RouterUser=admin
 ENV RouterPassword=password
-ENV CodaDeviceDocumentId=documentId
-ENV CodaDeviceTableId=tableId
-ENV CodaResultDocumentId=documentId
-ENV CodaResultTableId=tableId
 
+ENV RobinOrganizationId=your_org_id
+ENV RobinEmail=your_email
+ENV RobinPassword=your_password
 
-# Command to run the app
-CMD ["node", "dist/index.js"]
+ENV ApiKeys=sample_key_1,sample_key_2
 
+# Command to run the bundled app
+CMD ["bun", "run", "index.js"]

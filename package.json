@@ -4,23 +4,23 @@
   "version": "1.0.0",
   "main": "src/index.js",
   "scripts": {
-    "start": "node dist/index.js",
-    "dev": "ts-node src/index.ts",
-    "build": "tsc -p tsconfig.json && tsc-alias -p tsconfig.json",
-    "start2": "ts-node src/uploadJob.ts"
+    "start": "bun src/index.ts",
+    "dev": "bun --watch src/index.ts",
+    "migrate": "bun src/db/importDb.ts",
+    "robin": "bun src/robin.ts",
+    "reset-db": "bun src/db/resetDb.ts",
+    "build": "bun build ./src/index.ts --outdir ./dist --target bun --external deasync",
+    "test": "bun test"
   },
   "dependencies": {
     "coda-js": "4.2.1",
-    "dotenv": "^17.2.3",
-    "nedb-promises": "6.2.3",
+    "hono": "^4.12.3",
     "node-cron": "^4.2.1",
-    "node-unifi": "^2.5.1"
+    "node-unifi": "^2.5.1",
+    "surrealdb": "^2.0.0"
   },
   "devDependencies": {
-    "@types/node": "24.7.2",
-    "@types/node-unifi": "^2.5.1",
-    "ts-node": "^10.9.2",
-    "tsc-alias": "^1.8.16",
-    "typescript": "5.9.3"
+    "@types/bun": "latest",
+    "@types/node-unifi": "^2.5.1"
   }
 }

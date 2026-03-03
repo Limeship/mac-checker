@@ -1,24 +1,40 @@
-import cron from "node-cron";
-import Datastore from "nedb-promises";
-import { uploadJob } from "./uploadJob";
-import { runJob } from "./job";
-import dotenv from "dotenv"
+import { database } from "./db/database";
+import { initCollections } from "./db/initDb";
+import { syncDevices } from "./db/syncDevices";
+import { runJob } from "./jobs/job";
+import { Scheduler } from "./jobs/scheduler";
+import { app } from "./api";
 
-dotenv.config()
-const db = Datastore.create({ filename: "/data/devices.db", autoload: true });
+async function startApp() {
+  console.log("🚀 Starting device checker and server...");
+  try {
+    await database.connect();
+    const db = database.getInstance();
 
-console.log("🚀 Starting device checker...");
+    await initCollections(db);
+    await syncDevices(db);
 
-// Run every 15 minutes
-cron.schedule("*/15 * * * *", async () => {
-  console.log("⏰ Running scheduled job at", new Date().toISOString());
-  await runJob(db);
-});
+    try {
+      console.log("⏰ Running initial job at", new Date().toISOString());
+      await runJob(db);
+    } catch (jobErr: any) {
+      console.warn("⚠️ Initial job failed:", jobErr.message);
+    }
 
-cron.schedule("0 18 * * *", async () => {
-  console.log("⏰ Uploading data to Coda", new Date().toISOString());
-  await uploadJob(db);
-});
+    const scheduler = new Scheduler(db);
+    scheduler.start();
 
-// Keep container alive
-process.stdin.resume();
+    // Start Hono server
+    console.log("🌐 Server running at http://localhost:3000");
+    Bun.serve({
+      fetch: app.fetch,
+      port: 3000,
+    });
+
+  } catch (err: any) {
+    console.error("💥 Fatal error during startup:", err.message);
+    process.exit(1);
+  }
+}
+
+startApp();

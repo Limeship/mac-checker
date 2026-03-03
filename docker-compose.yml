@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  surrealdb:
+    image: surrealdb/surrealdb:latest
+    container_name: surrealdb
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - surrealdata:/data
+    environment:
+      - SURREAL_USER=root
+      - SURREAL_PASS=root
+    command: >
+      start --bind 0.0.0.0:8000
+      rocksdb:/data/rocksdb
+    restart: unless-stopped
+
+  mac-checker:
+    image: ghcr.io/limeship/mac-checker:latest
+    container_name: mac-checker
+    depends_on:
+      - surrealdb
+    environment:
+      - SurrealUrl=ws://surrealdb:8000/rpc
+      - SurrealUser=root
+      - SurrealPass=root
+      - SurrealNS=mac_checker
+      - SurrealDB=mac_checker
+      - CodaApiToken=your_token_here
+      - CodaDocumentId=your_doc_id
+      - CodaDevicesTableId=your_table_id
+      - CodaPeopleTableId=your_res_doc_id
+      - RouterIp=192.168.1.1
+      - RouterPort=8443
+      - RouterUser=admin
+      - RouterPassword=password
+      - ApiKeys=sample_key_1,sample_key_2
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/data  # Kept in case old NeDB file needs to be imported
+    restart: unless-stopped
+volumes:
+  surrealdata:
