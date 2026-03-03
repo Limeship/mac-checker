@@ -33,8 +33,9 @@ app.get("/data", async (c) => {
     const duration = `${days}d`;
 
     try {
-        const db = database.getInstance();
-        const result = await db.query(query, { duration });
+        const result = await database.withDb(async (db) => {
+            return await db.query(query, { duration });
+        });
         return c.json(result);
     } catch (err: any) {
         return c.json({ error: err.message }, 500);

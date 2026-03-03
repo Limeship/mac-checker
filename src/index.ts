@@ -8,20 +8,22 @@ import { app } from "./api";
 async function startApp() {
   console.log("🚀 Starting device checker and server...");
   try {
-    await database.connect();
-    const db = database.getInstance();
-
-    await initCollections(db);
-    await syncDevices(db);
+    // Initial setup tasks - each uses its own short-lived connection
+    await database.withDb(async (db) => {
+      await initCollections(db);
+      await syncDevices(db);
+    });
 
     try {
       console.log("⏰ Running initial job at", new Date().toISOString());
-      await runJob(db);
+      await database.withDb(async (db) => {
+        await runJob(db);
+      });
     } catch (jobErr: any) {
       console.warn("⚠️ Initial job failed:", jobErr.message);
     }
 
-    const scheduler = new Scheduler(db);
+    const scheduler = new Scheduler(database);
     scheduler.start();
 
     // Start Hono server

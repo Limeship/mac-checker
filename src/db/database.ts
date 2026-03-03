@@ -3,12 +3,14 @@ import { CONFIG } from "../config";
 
 export class Database {
     private db: Surreal;
+    private connected: boolean = false;
 
     constructor() {
         this.db = new Surreal();
     }
 
     async connect() {
+        if (this.connected) return;
         console.log("🚀 Connecting to SurrealDB at", CONFIG.SURREAL_URL);
         try {
             await this.db.connect(CONFIG.SURREAL_URL);
@@ -17,6 +19,7 @@ export class Database {
                 password: CONFIG.SURREAL_PASS,
             });
             await this.db.use({ namespace: CONFIG.SURREAL_NS, database: CONFIG.SURREAL_DB });
+            this.connected = true;
             console.log("✅ Authenticated with SurrealDB.");
         } catch (err: any) {
             console.error("❌ Failed to connect to SurrealDB:", err.message);
@@ -33,7 +36,22 @@ export class Database {
     }
 
     async close() {
+        if (!this.connected) return;
         await this.db.close();
+        this.connected = false;
+        console.log("💤 Database connection closed.");
+    }
+
+    /**
+     * Helper to run an operation within a connection that is automatically closed after use.
+     */
+    async withDb<T>(callback: (db: Surreal) => Promise<T>): Promise<T> {
+        await this.connect();
+        try {
+            return await callback(this.db);
+        } finally {
+            await this.close();
+        }
     }
 }
 
