@@ -9,6 +9,7 @@ export interface DbDevice {
     user: string; // record<users>
     description: string;
     mac: string;
+    ignored?: boolean;
 }
 
 export interface DbDeviceLog {

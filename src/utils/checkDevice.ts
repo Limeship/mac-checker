@@ -1,4 +1,5 @@
 import { CONFIG } from "../config";
+import { logger } from "./logger";
 
 export interface LocalDevice {
     name: string;
@@ -11,7 +12,7 @@ export interface LocalDevice {
  * This resolves compatibility issues between node-unifi (Axios) and the Bun runtime.
  */
 export async function getLocalDevices(): Promise<LocalDevice[]> {
-    console.log("⏳ Fetching devices from local UniFi Controller...");
+    logger.info("⏳ Fetching devices from local UniFi Controller...");
     const baseUrl = `https://${CONFIG.UNIFI_HOST}:${CONFIG.UNIFI_PORT}`;
 
     try {
@@ -20,11 +21,11 @@ export async function getLocalDevices(): Promise<LocalDevice[]> {
         };
 
         if (CONFIG.UNIFI_API_KEY) {
-            console.log("🔑 Using API Key for authentication...");
+            logger.info("🔑 Using API Key for authentication...");
             headers['x-api-key'] = CONFIG.UNIFI_API_KEY;
         } else {
             // Step 1: Login flow for username/password
-            console.log(`🔑 Logging in to UniFi at ${CONFIG.UNIFI_HOST}...`);
+            logger.info(`🔑 Logging in to UniFi at ${CONFIG.UNIFI_HOST}...`);
             const loginRes = await fetch(`${baseUrl}/api/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -56,7 +57,7 @@ export async function getLocalDevices(): Promise<LocalDevice[]> {
         }
 
         // Step 2: Fetch Client Devices
-        console.log("📡 Fetching client devices...");
+        logger.info("📡 Fetching client devices...");
         // API Keys usually use the same proxy endpoints or the new /api/v1/ endpoints.
         // We'll stick with the proven proxy endpoint first.
         const devicesRes = await fetch(`${baseUrl}/proxy/network/api/s/default/stat/sta/`, {
@@ -78,11 +79,11 @@ export async function getLocalDevices(): Promise<LocalDevice[]> {
             mac: x.mac
         } as LocalDevice));
 
-        console.log(`✅ Success: Found ${localDevices.length} devices.`);
+        logger.info(`✅ Success: Found ${localDevices.length} devices.`);
         return localDevices;
 
     } catch (err: any) {
-        console.error(`❌ UniFi Error: ${err.message}`);
+        logger.error("❌ UniFi Error:", err);
         throw err;
     }
 }

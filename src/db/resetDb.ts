@@ -2,44 +2,45 @@ import { Surreal } from "surrealdb";
 import { database } from "./database";
 import { COLLECTIONS } from "../constants";
 import { initCollections } from "./initDb";
+import { logger } from "../utils/logger";
 
 export async function resetDb() {
-    console.log(`🚀 Starting database reset...`);
+    logger.info("🚀 Starting database reset...");
     let db: Surreal;
     try {
         await database.connect();
         db = database.getInstance();
-        console.log("✅ Authenticated.");
+        logger.info("✅ Authenticated.");
     } catch (e: any) {
-        console.error("❌ Failed to authenticate with SurrealDB:", e.message);
+        logger.error("❌ Failed to authenticate with SurrealDB:", e);
         process.exit(1);
     }
 
     try {
-        console.log(`⏳ Removing table '${COLLECTIONS.DEVICE_LOGS}'...`);
+        logger.info(`⏳ Removing table '${COLLECTIONS.DEVICE_LOGS}'...`);
         await db.query(`REMOVE TABLE ${COLLECTIONS.DEVICE_LOGS}`);
-        console.log(`✅ Table '${COLLECTIONS.DEVICE_LOGS}' removed.`);
+        logger.info(`✅ Table '${COLLECTIONS.DEVICE_LOGS}' removed.`);
     } catch (e) {
-        console.log(`ℹ️ Table '${COLLECTIONS.DEVICE_LOGS}' does not exist or already removed.`);
+        logger.info(`ℹ️ Table '${COLLECTIONS.DEVICE_LOGS}' does not exist or already removed.`);
     }
 
     try {
-        console.log(`⏳ Removing table '${COLLECTIONS.DEVICES}'...`);
+        logger.info(`⏳ Removing table '${COLLECTIONS.DEVICES}'...`);
         await db.query(`REMOVE TABLE ${COLLECTIONS.DEVICES}`);
-        console.log(`✅ Table '${COLLECTIONS.DEVICES}' removed.`);
+        logger.info(`✅ Table '${COLLECTIONS.DEVICES}' removed.`);
     } catch (e) {
-        console.log(`ℹ️ Table '${COLLECTIONS.DEVICES}' does not exist or already removed.`);
+        logger.info(`ℹ️ Table '${COLLECTIONS.DEVICES}' does not exist or already removed.`);
     }
 
-    console.log("⏳ Re-initializing tables...");
+    logger.info("⏳ Re-initializing tables...");
     await initCollections(db);
-    console.log("✅ Database reset complete!");
-    await db.close();
+    logger.info("✅ Database reset complete!");
+    await database.close();
 }
 
 if (require.main === module) {
     resetDb().then(() => process.exit(0)).catch(e => {
-        console.error(e);
+        logger.error("Fatal error during reset:", e);
         process.exit(1);
     });
 }

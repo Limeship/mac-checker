@@ -2,9 +2,10 @@ import { Surreal } from "surrealdb";
 import { codaService, type Device, type People } from "../services/coda.service";
 import { COLLECTIONS } from "../constants";
 import { DbUser, DbDevice } from "../types/db";
+import { logger } from "../utils/logger";
 
 export async function syncDevices(db: Surreal) {
-    console.log("⏳ Syncing users and devices from Coda to SurrealDB...");
+    logger.info("⏳ Syncing users and devices from Coda to SurrealDB...");
 
     const userMap = await syncUsers(db);
     if (!userMap) return;
@@ -17,7 +18,7 @@ async function syncUsers(db: Surreal): Promise<Map<string, string> | null> {
     try {
         codaPeople = await codaService.getPeople();
     } catch (err: any) {
-        console.error("❌ Failed to get people from Coda:", err.message);
+        logger.error("❌ Failed to get people from Coda:", err);
         return null;
     }
 
@@ -31,14 +32,14 @@ async function syncUsers(db: Surreal): Promise<Map<string, string> | null> {
         for (const person of codaPeople) {
             const existingUser = dbUsersMap.get(person.name);
             if (!existingUser) {
-                console.log(`➕ Adding new user: ${person.name}`);
+                logger.info(`➕ Adding new user: ${person.name}`);
                 const [newUser] = await db.query<[any]>(`CREATE ${COLLECTIONS.USERS} CONTENT $data`, {
                     data: { name: person.name, robinId: person.robinId }
                 });
                 userMap.set(person.name, newUser[0].id);
             } else {
                 if (existingUser.robinId !== person.robinId) {
-                    console.log(`🔄 Updating user: ${person.name}`);
+                    logger.info(`🔄 Updating user: ${person.name}`);
                     await db.query(`UPDATE ${existingUser.id} MERGE $data`, {
                         data: { robinId: person.robinId }
                     });
@@ -48,12 +49,12 @@ async function syncUsers(db: Surreal): Promise<Map<string, string> | null> {
             }
         }
         for (const [name, record] of dbUsersMap.entries()) {
-            console.log(`🗑️ Deleting user: ${record.name} (${record.robinId})`);
+            logger.info(`🗑️ Deleting user: ${record.name} (${record.robinId})`);
             await db.query(`DELETE ${record.id}`);
         }
         return userMap;
     } catch (err: any) {
-        console.error("❌ Failed to sync users:", err.message);
+        logger.error("❌ Failed to sync users:", err);
         return null;
     }
 }
@@ -63,12 +64,12 @@ async function syncDevicesInternal(db: Surreal, userMap: Map<string, string>) {
     try {
         codaDevices = await codaService.getDevices();
     } catch (err: any) {
-        console.error("❌ Failed to get devices from Coda:", err.message);
+        logger.error("❌ Failed to get devices from Coda:", err);
         return;
     }
 
     try {
-        const results = await db.query<[DbDevice[]]>(`SELECT id, user, description, mac FROM ${COLLECTIONS.DEVICES}`);
+        const results = await db.query<[DbDevice[]]>(`SELECT id, user, description, mac, ignored FROM ${COLLECTIONS.DEVICES}`);
         const dbDevices = results[0];
         const dbDevicesMap = new Map(dbDevices.map(d => [d.mac.toLowerCase(), d]));
 
@@ -78,24 +79,31 @@ async function syncDevicesInternal(db: Surreal, userMap: Map<string, string>) {
             const userRecordId = userMap.get(codaDevice.user);
 
             if (!userRecordId) {
-                console.warn(`⚠️ User ${codaDevice.user} not found for device ${codaDevice.mac}, skipping device sync.`);
+                logger.warn(`⚠️ User ${codaDevice.user} not found for device ${codaDevice.mac}, skipping device sync.`);
+                continue;
+            }
+
+            if (existingDevice && existingDevice.ignored) {
+                logger.info(`⏩ Skipping update for ignored device: ${codaDevice.user}->${codaDevice.description} (${codaDevice.mac})`);
+                dbDevicesMap.delete(mac);
                 continue;
             }
 
             const deviceData = {
                 user: userRecordId,
                 description: codaDevice.description,
-                mac: codaDevice.mac
+                mac: codaDevice.mac,
+                ignored: false
             };
 
             if (!existingDevice) {
-                console.log(`➕ Adding new device: ${codaDevice.user}->${codaDevice.description} (${codaDevice.mac})`);
+                logger.info(`➕ Adding new device: ${codaDevice.user}->${codaDevice.description} (${codaDevice.mac})`);
                 await db.query(`CREATE ${COLLECTIONS.DEVICES} CONTENT $data`, {
                     data: deviceData
                 });
             } else {
                 if (existingDevice.user !== userRecordId || existingDevice.description !== codaDevice.description || existingDevice.mac !== codaDevice.mac) {
-                    console.log(`🔄 Updating device: ${codaDevice.user}->${codaDevice.description} (${codaDevice.mac})`);
+                    logger.info(`🔄 Updating device: ${codaDevice.user}->${codaDevice.description} (${codaDevice.mac})`);
                     await db.query(`UPDATE ${existingDevice.id} MERGE $data`, {
                         data: deviceData
                     });
@@ -105,12 +113,16 @@ async function syncDevicesInternal(db: Surreal, userMap: Map<string, string>) {
         }
 
         for (const [mac, record] of dbDevicesMap.entries()) {
-            console.log(`🗑️ Deleting device: ${record.description} (${record.mac})`);
+            if (record.ignored) {
+                logger.info(`⏩ Skipping deletion of ignored device: ${record.description} (${record.mac})`);
+                continue;
+            }
+            logger.info(`🗑️ Deleting device: ${record.description} (${record.mac})`);
             await db.query(`DELETE ${record.id}`);
         }
 
-        console.log("✅ Sync complete.");
+        logger.info("✅ Sync complete.");
     } catch (err: any) {
-        console.error("❌ Failed to sync devices:", err.message);
+        logger.error("❌ Failed to sync devices:", err);
     }
 }

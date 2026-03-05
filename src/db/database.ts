@@ -1,28 +1,45 @@
 import { Surreal } from "surrealdb";
 import { CONFIG } from "../config";
+import { logger } from "../utils/logger";
 
 export class Database {
     private db: Surreal;
     private connected: boolean = false;
+    private connectionCount: number = 0;
+    private connectPromise: Promise<void> | null = null;
 
     constructor() {
         this.db = new Surreal();
     }
 
     async connect() {
+        this.connectionCount++;
         if (this.connected) return;
-        console.log("🚀 Connecting to SurrealDB at", CONFIG.SURREAL_URL);
+
+        if (!this.connectPromise) {
+            this.connectPromise = (async () => {
+                logger.info(`🚀 Connecting to SurrealDB at ${CONFIG.SURREAL_URL}`);
+                try {
+                    await this.db.connect(CONFIG.SURREAL_URL);
+                    await this.db.signin({
+                        username: CONFIG.SURREAL_USER,
+                        password: CONFIG.SURREAL_PASS,
+                    });
+                    await this.db.use({ namespace: CONFIG.SURREAL_NS, database: CONFIG.SURREAL_DB });
+                    this.connected = true;
+                    logger.info("✅ Authenticated with SurrealDB.");
+                } catch (err: any) {
+                    logger.error("❌ Failed to connect to SurrealDB:", err);
+                    this.connectPromise = null;
+                    throw err;
+                }
+            })();
+        }
+
         try {
-            await this.db.connect(CONFIG.SURREAL_URL);
-            await this.db.signin({
-                username: CONFIG.SURREAL_USER,
-                password: CONFIG.SURREAL_PASS,
-            });
-            await this.db.use({ namespace: CONFIG.SURREAL_NS, database: CONFIG.SURREAL_DB });
-            this.connected = true;
-            console.log("✅ Authenticated with SurrealDB.");
-        } catch (err: any) {
-            console.error("❌ Failed to connect to SurrealDB:", err.message);
+            await this.connectPromise;
+        } catch (err) {
+            this.connectionCount--;
             throw err;
         }
     }
@@ -37,9 +54,13 @@ export class Database {
 
     async close() {
         if (!this.connected) return;
-        await this.db.close();
-        this.connected = false;
-        console.log("💤 Database connection closed.");
+        this.connectionCount--;
+        if (this.connectionCount === 0) {
+            await this.db.close();
+            this.connected = false;
+            this.connectPromise = null;
+            logger.info("💤 Database connection closed.");
+        }
     }
 
     /**

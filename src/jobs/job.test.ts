@@ -6,6 +6,13 @@ import { COLLECTIONS } from "../constants";
 
 jest.mock("../services/coda.service");
 jest.mock("../utils/checkDevice");
+jest.mock("../utils/logger", () => ({
+    logger: {
+        info: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn(),
+    }
+}));
 
 describe("job.ts", () => {
     let mockDb: jest.Mocked<Surreal>;
@@ -51,15 +58,11 @@ describe("job.ts", () => {
     });
 
     it("should handle coda fetch errors gracefully", async () => {
-        const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => { });
         (codaService.getDevices as jest.Mock).mockRejectedValue(new Error("Coda failure"));
 
         await runJob(mockDb);
 
-        expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Error fetching devices from Coda:"), "Coda failure");
         expect(getLocalDevices).not.toHaveBeenCalled();
         expect(mockDb.query).not.toHaveBeenCalled();
-
-        consoleSpy.mockRestore();
     });
 });

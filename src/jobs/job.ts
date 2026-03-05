@@ -3,6 +3,7 @@ import { codaService, type Device } from "../services/coda.service";
 import { checkDevice, getLocalDevices } from "../utils/checkDevice";
 import { COLLECTIONS } from "../constants";
 import { DbDevice } from "../types/db";
+import { logger } from "../utils/logger";
 
 export async function runJob(db: Surreal): Promise<void> {
   let devices: Device[];
@@ -10,7 +11,7 @@ export async function runJob(db: Surreal): Promise<void> {
   try {
     devices = await codaService.getDevices();
   } catch (err) {
-    console.error("❌ Error fetching devices from Coda:", (err as Error).message);
+    logger.error("❌ Error fetching devices from Coda:", err);
     return;
   }
 
@@ -27,7 +28,7 @@ export async function runJob(db: Surreal): Promise<void> {
         const dbDevice = results[0][0];
 
         if (!dbDevice) {
-          console.warn(`⚠️ SurrealDB record not found for device ${device.description} (${device.mac}) even though it passed the check.`);
+          logger.warn(`⚠️ SurrealDB record not found for device ${device.description} (${device.mac}) even though it passed the check.`);
           continue;
         }
 
@@ -39,12 +40,12 @@ export async function runJob(db: Surreal): Promise<void> {
         await db.query(`CREATE ${COLLECTIONS.DEVICE_LOGS} CONTENT $data`, {
           data: logData
         });
-        console.log(`✅ ${device.user} (${device.description}) passed at ${logData.timestamp}`);
+        logger.info(`✅ ${device.user} (${device.description}) passed at ${logData.timestamp}`);
       } catch (err: any) {
-        console.error(`❌ Error creating log for ${device.mac}:`, err.message);
+        logger.error(`❌ Error creating log for ${device.mac}:`, err);
       }
     } else {
-      console.log(`❌ ${device.user} (${device.description}) did not pass`);
+      logger.info(`❌ ${device.user} (${device.description}) did not pass`);
     }
   }
 }

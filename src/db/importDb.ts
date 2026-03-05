@@ -4,36 +4,37 @@ import { database } from "./database";
 import { COLLECTIONS } from "../constants";
 import { CONFIG } from "../config";
 import { DbDevice } from "../types/db";
+import { logger } from "../utils/logger";
 
 const NEDB_FILE = "/data/devices.db";
 
 export async function migrateDb() {
-    console.log(`🚀 Starting migration...`);
+    logger.info("🚀 Starting migration...");
     try {
         await database.connect();
         const db = database.getInstance();
-        console.log("✅ Connected to SurrealDB.");
+        logger.info("✅ Connected to SurrealDB.");
 
         if (!fs.existsSync(NEDB_FILE)) {
             const LOCAL_NEDB_FILE = "./data/devices.db";
             if (fs.existsSync(LOCAL_NEDB_FILE)) {
-                console.log(`Found local db at ${LOCAL_NEDB_FILE}`);
+                logger.info(`Found local db at ${LOCAL_NEDB_FILE}`);
                 await processLines(LOCAL_NEDB_FILE, db);
             } else {
-                console.log(`ℹ️ No NeDB file found at ${NEDB_FILE} or ${LOCAL_NEDB_FILE}. Skipping migration.`);
+                logger.info(`ℹ️ No NeDB file found at ${NEDB_FILE} or ${LOCAL_NEDB_FILE}. Skipping migration.`);
                 return;
             }
         } else {
             await processLines(NEDB_FILE, db);
         }
     } catch (e: any) {
-        console.error("❌ Migration failed:", e.message);
+        logger.error("❌ Migration failed:", e);
         process.exit(1);
     }
 }
 
 async function processLines(filePath: string, db: Surreal) {
-    console.log(`⏳ Starting migration from ${filePath}...`);
+    logger.info(`⏳ Starting migration from ${filePath}...`);
     const content = fs.readFileSync(filePath, 'utf8');
     const lines = content.split(/\r?\n/);
     let count = 0;
@@ -57,7 +58,7 @@ async function processLines(filePath: string, db: Surreal) {
             const dbDevice = results[0][0];
 
             if (!dbDevice) {
-                console.warn(`⚠️ Skipping log entry - device with mac ${record.mac} not found in DB.`);
+                logger.warn(`⚠️ Skipping log entry - device with mac ${record.mac} not found in DB.`);
                 continue;
             }
 
@@ -71,20 +72,20 @@ async function processLines(filePath: string, db: Surreal) {
 
             count++;
             if (count % 100 === 0) {
-                console.log(`... migrated ${count} records`);
+                logger.info(`... migrated ${count} records`);
             }
         } catch (e: any) {
-            console.error(`❌ Error migrating line: ${line}`, e.message);
+            logger.error(`❌ Error migrating line: ${line}`, e);
         }
     }
 
-    console.log(`✅ Migration complete. ${count} records imported.`);
-    await db.close();
+    logger.info(`✅ Migration complete. ${count} records imported.`);
+    await database.close();
 }
 
 if (require.main === module) {
     migrateDb().then(() => process.exit(0)).catch(e => {
-        console.error(e);
+        logger.error("Fatal error during migration:", e);
         process.exit(1);
     });
 }

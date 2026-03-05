@@ -18,6 +18,13 @@ jest.mock("surrealdb", () => {
 jest.mock("fs");
 jest.mock("readline");
 jest.mock("dotenv", () => ({ config: jest.fn() }));
+jest.mock("../utils/logger", () => ({
+    logger: {
+        info: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn(),
+    }
+}));
 
 describe("importDb.ts", () => {
     let mockDbInstance: any;

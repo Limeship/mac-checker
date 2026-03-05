@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { database } from "../db/database";
 import { CONFIG } from "../config";
+import { logger } from "../utils/logger";
 
 const app = new Hono();
 
@@ -38,6 +39,7 @@ app.get("/data", async (c) => {
         });
         return c.json(result);
     } catch (err: any) {
+        logger.error("API error in /data:", err);
         return c.json({ error: err.message }, 500);
     }
 });

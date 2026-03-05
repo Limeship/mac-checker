@@ -4,9 +4,10 @@ import { syncDevices } from "./db/syncDevices";
 import { runJob } from "./jobs/job";
 import { Scheduler } from "./jobs/scheduler";
 import { app } from "./api";
+import { logger } from "./utils/logger";
 
 async function startApp() {
-  console.log("🚀 Starting device checker and server...");
+  logger.info("🚀 Starting device checker and server...");
   try {
     // Initial setup tasks - each uses its own short-lived connection
     await database.withDb(async (db) => {
@@ -15,26 +16,26 @@ async function startApp() {
     });
 
     try {
-      console.log("⏰ Running initial job at", new Date().toISOString());
+      logger.info(`⏰ Running initial job at ${new Date().toISOString()}`);
       await database.withDb(async (db) => {
         await runJob(db);
       });
     } catch (jobErr: any) {
-      console.warn("⚠️ Initial job failed:", jobErr.message);
+      logger.warn("⚠️ Initial job failed:", jobErr);
     }
 
     const scheduler = new Scheduler(database);
     scheduler.start();
 
     // Start Hono server
-    console.log("🌐 Server running at http://localhost:3000");
+    logger.info("🌐 Server running at http://localhost:3000");
     Bun.serve({
       fetch: app.fetch,
       port: 3000,
     });
 
   } catch (err: any) {
-    console.error("💥 Fatal error during startup:", err.message);
+    logger.error("💥 Fatal error during startup:", err);
     process.exit(1);
   }
 }
