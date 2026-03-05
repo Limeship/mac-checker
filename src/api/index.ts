@@ -14,7 +14,7 @@ select device.user.name as user,
 FROM device_logs
 WHERE timestamp > (time::now() - <duration>$duration)
 GROUP BY device.user.name, device.description, day
-order by day
+order by day, device.user.name
 `;
 
 // Auth Middleware
