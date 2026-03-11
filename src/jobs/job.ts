@@ -22,7 +22,7 @@ export async function runJob(db: Surreal): Promise<void> {
     if (ok) {
       try {
         const results = await db.query<[DbDevice[]]>(
-          `SELECT id, user, description, mac FROM ${COLLECTIONS.DEVICES} WHERE mac = $mac`,
+          `SELECT id, user, description, mac, ignored FROM ${COLLECTIONS.DEVICES} WHERE mac = $mac`,
           { mac: device.mac }
         );
         const dbDevice = results[0][0];
@@ -31,7 +31,10 @@ export async function runJob(db: Surreal): Promise<void> {
           logger.warn(`⚠️ SurrealDB record not found for device ${device.description} (${device.mac}) even though it passed the check.`);
           continue;
         }
-
+        if (dbDevice.ignored) {
+          logger.info(`⏩ Skipping update for ignored device: ${device.user} (${device.mac})`);
+          continue;
+        }
         const logData = {
           device: dbDevice.id,
           timestamp: new Date(),
