@@ -16,7 +16,7 @@ RETURN array::flatten([
     WHERE timestamp > time::now() - <duration>$duration 
     GROUP BY device.user.name, device.description, day 
     ORDER BY day),
-	(SELECT start AS first_time, end AS last_time, user.name AS user, 'Robin' AS description, time::group(start, 'day') AS day FROM robin_logs)
+	(SELECT start AS first_time, end AS last_time, user.name AS user, 'Robin' AS description, time::group(start, 'day') AS day FROM robin_logs where start > time::now() - <duration>$duration)
 ]);
 `;
 
