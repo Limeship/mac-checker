@@ -49,22 +49,20 @@ export class RobinService {
         const startOfDay = new Date(date).setHours(0, 0, 0, 0);
         const endOfDay = new Date(date).setHours(23, 59, 59, 999);
 
-        const query = [
-            {
-                operationName: "DeskReservations",
-                variables: {
-                    userId: userId,
-                    start: new Date(startOfDay).toISOString(),
-                    end: new Date(endOfDay).toISOString()
-                },
-                extensions: {
-                    persistedQuery: {
-                        version: 1,
-                        sha256Hash: "b16bfb17a9a68c55d18d8e890d2a1ac640c6a410f23db31ef5ae11bc25d1cdf7"
-                    }
+        const query = {
+            operationName: "DeskReservations",
+            variables: {
+                userId: userId,
+                start: new Date(startOfDay).toISOString(),
+                end: new Date(endOfDay).toISOString()
+            },
+            extensions: {
+                persistedQuery: {
+                    version: 1,
+                    sha256Hash: "b16bfb17a9a68c55d18d8e890d2a1ac640c6a410f23db31ef5ae11bc25d1cdf7"
                 }
             }
-        ];
+        };
 
         const response = await fetch('https://federation-gateway.robinpowered.com/graphql', {
             method: 'POST',
