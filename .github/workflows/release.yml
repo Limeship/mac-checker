@@ -67,7 +67,7 @@ jobs:
         run: echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
 
       - name: Build and push backend Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./backend
           push: true
@@ -76,7 +76,7 @@ jobs:
           cache-to: type=registry,ref=ghcr.io/${{ env.REPO }}/mac-checker:buildcache,mode=max
 
       - name: Build and push frontend Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./frontend
           push: true
