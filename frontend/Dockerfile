@@ -1,10 +1,10 @@
-# Build stage — use node for install (bun has network issues in Docker buildx)
-FROM node:22-alpine AS build
+# Build stage
+FROM oven/bun:latest AS build
 WORKDIR /app
-COPY package.json bun.lock ./
-RUN npm install --legacy-peer-deps
+COPY package.json bun.lock .npmrc ./
+RUN bun install --frozen-lockfile
 COPY . .
-RUN npm run build
+RUN bun run build
 
 # Serve stage — minimal Bun static server with /api proxy
 FROM oven/bun:latest
