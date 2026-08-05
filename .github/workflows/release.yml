@@ -70,6 +70,8 @@ jobs:
           context: ./backend
           push: true
           tags: ghcr.io/${{ env.REPO }}/mac-checker:latest,ghcr.io/${{ env.REPO }}/mac-checker:${{ needs.release.outputs.new_release_version }}
+          cache-from: type=registry,ref=ghcr.io/${{ env.REPO }}/mac-checker:buildcache
+          cache-to: type=registry,ref=ghcr.io/${{ env.REPO }}/mac-checker:buildcache,mode=max
 
       - name: Build and push frontend Docker image
         uses: docker/build-push-action@v5
@@ -77,4 +79,6 @@ jobs:
           context: ./frontend
           push: true
           tags: ghcr.io/${{ env.REPO }}/lime-tracker:latest,ghcr.io/${{ env.REPO }}/lime-tracker:${{ needs.release.outputs.new_release_version }}
+          cache-from: type=registry,ref=ghcr.io/${{ env.REPO }}/lime-tracker:buildcache
+          cache-to: type=registry,ref=ghcr.io/${{ env.REPO }}/lime-tracker:buildcache,mode=max
 
