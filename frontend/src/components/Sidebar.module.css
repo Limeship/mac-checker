@@ -38,12 +38,17 @@
 }
 
 .swatch {
-  width: 16px; height: 16px;
+  width: 22px; height: 22px;
   border-radius: 50%;
   border: 2px solid transparent;
   cursor: pointer;
   transition: transform 0.15s, border-color 0.15s;
   padding: 0;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
-.swatch:hover { transform: scale(1.2); }
-.swatchActive { border-color: var(--text) !important; transform: scale(1.15); }
+.swatch:hover { transform: scale(1.15); }
+.swatchActive { border-color: var(--text) !important; transform: scale(1.1); }

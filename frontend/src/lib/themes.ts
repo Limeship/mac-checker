@@ -3,7 +3,8 @@ export type ThemeId = 'forest' | 'slate' | 'amber' | 'contrast' | 'soft';
 export interface Theme {
   id: ThemeId;
   label: string;
-  swatch: string; // preview color for the picker
+  swatchBg: string;
+  swatchAccent: string;
   vars: Record<string, string>;
 }
 
@@ -11,7 +12,8 @@ export const themes: Theme[] = [
   {
     id: 'forest',
     label: 'Forest',
-    swatch: '#A8E63D',
+    swatchBg: '#0D0F0D',
+    swatchAccent: '#A8E63D',
     vars: {
       '--bg':        '#0D0F0D',
       '--surface':   '#141A14',
@@ -31,7 +33,8 @@ export const themes: Theme[] = [
   {
     id: 'slate',
     label: 'Slate',
-    swatch: '#7DD3FC',
+    swatchBg: '#0C0E12',
+    swatchAccent: '#7DD3FC',
     vars: {
       '--bg':        '#0C0E12',
       '--surface':   '#13161D',
@@ -51,7 +54,8 @@ export const themes: Theme[] = [
   {
     id: 'amber',
     label: 'Amber',
-    swatch: '#F0A500',
+    swatchBg: '#0F0D08',
+    swatchAccent: '#F0A500',
     vars: {
       '--bg':        '#0F0D08',
       '--surface':   '#181408',
@@ -71,7 +75,8 @@ export const themes: Theme[] = [
   {
     id: 'contrast',
     label: 'High Contrast',
-    swatch: '#FFFFFF',
+    swatchBg: '#000000',
+    swatchAccent: '#A8E63D',
     vars: {
       '--bg':        '#000000',
       '--surface':   '#0A0A0A',
@@ -91,7 +96,8 @@ export const themes: Theme[] = [
   {
     id: 'soft',
     label: 'Soft Light',
-    swatch: '#5A9A00',
+    swatchBg: '#F5F7F2',
+    swatchAccent: '#5A9A00',
     vars: {
       '--bg':        '#F5F7F2',
       '--surface':   '#FFFFFF',

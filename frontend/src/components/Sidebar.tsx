@@ -64,10 +64,20 @@ export function Sidebar({ currentPage, currentTheme, onPageChange, onThemeChange
           <button
             key={t.id}
             className={`${styles.swatch} ${currentTheme === t.id ? styles.swatchActive : ''}`}
-            style={{ background: t.swatch }}
             title={t.label}
             onClick={() => handleTheme(t.id)}
-          />
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" style={{ display: 'block' }}>
+              <clipPath id={`clip-${t.id}`}>
+                <circle cx="9" cy="9" r="8" />
+              </clipPath>
+              <g clipPath={`url(#clip-${t.id})`}>
+                <rect x="0" y="0" width="9" height="18" fill={t.swatchBg} />
+                <rect x="9" y="0" width="9" height="18" fill={t.swatchAccent} />
+              </g>
+              <circle cx="9" cy="9" r="8" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.2" />
+            </svg>
+          </button>
         ))}
       </div>
     </nav>
