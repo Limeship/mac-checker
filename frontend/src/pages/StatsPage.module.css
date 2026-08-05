@@ -1,0 +1,62 @@
+.page { display: flex; flex-direction: column; flex: 1; overflow: hidden; min-height: 0; }
+
+.topBar {
+  display: flex; align-items: center; gap: 12px; padding: 10px 20px;
+  border-bottom: 1px solid var(--border); background: var(--surface); flex-shrink: 0;
+}
+.pageTitle { font-weight: 600; font-size: 14px; }
+.controls { display: flex; gap: 6px; }
+
+.scrollArea { flex: 1; overflow: auto; }
+.loading { padding: 40px; text-align: center; color: var(--muted); }
+
+.content { padding: 24px 20px; display: flex; flex-direction: column; gap: 28px; max-width: 900px; }
+
+.sectionTitle {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 10px;
+}
+
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
+
+/* Leaderboard */
+.leaderboard { display: flex; flex-direction: column; gap: 5px; }
+.lbRow {
+  display: grid; grid-template-columns: 24px 1fr 80px; align-items: center; gap: 10px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 9px 12px;
+}
+.lbRank { font-size: 12px; color: var(--muted); }
+.gold   { color: #FFD700; }
+.silver { color: #B0B8C1; }
+.bronze { color: #CD9B6A; }
+.lbMid { min-width: 0; }
+.lbName { font-weight: 500; font-size: 13px; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lbSub  { font-size: 12px; font-weight: 500; }
+.lbDevice { font-size: 10px; color: var(--muted); margin-left: 6px; }
+.lbBarWrap { background: var(--surface2); border-radius: 2px; height: 4px; overflow: hidden; }
+.lbBar { height: 100%; border-radius: 2px; transition: width 0.5s; }
+.lbVal { font-size: 12px; color: var(--muted); text-align: right; }
+
+/* List cards (consistent day) */
+.listCards { display: flex; flex-direction: column; gap: 5px; }
+.listCard {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 9px 12px; font-size: 13px;
+}
+.tag {
+  font-size: 11px; padding: 2px 8px; border-radius: 10px;
+  background: var(--accent-dim); color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+/* Peak card */
+.peakCard {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px 20px; display: flex; align-items: baseline; gap: 12px;
+  max-width: 280px;
+}
+.peakDay { font-size: 22px; font-weight: 600; color: var(--accent); }
+.peakSub { font-size: 12px; color: var(--muted); }

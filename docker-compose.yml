@@ -5,8 +5,6 @@ services:
     image: surrealdb/surrealdb:latest
     container_name: surrealdb
     restart: unless-stopped
-    ports:
-      - "8000:8000"
     volumes:
       - surrealdata:/data
     environment:
@@ -15,7 +13,6 @@ services:
     command: >
       start --bind 0.0.0.0:8000
       rocksdb:/data/rocksdb
-    restart: unless-stopped
 
   mac-checker:
     image: ghcr.io/limeship/mac-checker:latest
@@ -37,10 +34,22 @@ services:
       - RouterUser=admin
       - RouterPassword=password
       - ApiKeys=sample_key_1,sample_key_2
-    ports:
-      - "3000:3000"
     volumes:
-      - ./data:/data  # Kept in case old NeDB file needs to be imported
+      - ./backend/data:/data
     restart: unless-stopped
+
+  lime-tracker:
+    image: ghcr.io/limeship/lime-tracker:latest
+    container_name: lime-tracker
+    depends_on:
+      - mac-checker
+    environment:
+      - PORT=8080
+      - BACKEND_URL=http://mac-checker:3000
+      - API_KEY=your_api_key_here
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
 volumes:
   surrealdata:
