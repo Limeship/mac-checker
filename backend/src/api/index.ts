@@ -155,7 +155,7 @@ pub.get("/stats", async (c) => {
                     device.id          AS deviceId,
                     device.description AS deviceDesc,
                     device.user.name   AS userName,
-                    count(DISTINCT time::group(timestamp, 'day')) AS days
+                    array::len(array::distinct(array::group(time::group(timestamp, 'day')))) AS days
                 FROM device_logs
                 WHERE timestamp >= $start AND timestamp <= $end
                   AND device.ignored != true
@@ -167,7 +167,7 @@ pub.get("/stats", async (c) => {
                     device.user.id   AS userId,
                     device.user.name AS userName,
                     time::group(timestamp, 'day') AS day,
-                    count(DISTINCT device.id) AS deviceCount
+                    array::len(array::distinct(array::group(device.id))) AS deviceCount
                 FROM device_logs
                 WHERE timestamp >= $start AND timestamp <= $end
                   AND device.ignored != true
