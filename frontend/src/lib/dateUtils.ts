@@ -25,18 +25,22 @@ export function fmtMonthYear(d: Date): string {
   return d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
 }
 
-export function minsToHours(from: string, to: string): string {
+export function minsToHours(from?: string, to?: string): string {
+  if (!from || !to) return '0h';
   const [fh, fm] = from.split(':').map(Number);
   const [th, tm] = to.split(':').map(Number);
-  const mins = (th * 60 + tm) - (fh * 60 + fm);
+  if (isNaN(fh) || isNaN(fm) || isNaN(th) || isNaN(tm)) return '0h';
+  const mins = Math.max(0, (th * 60 + tm) - (fh * 60 + fm));
   const h = Math.floor(mins / 60), m = mins % 60;
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
-export function signalStrength(from: string, to: string): number {
+export function signalStrength(from?: string, to?: string): number {
+  if (!from || !to) return 1;
   const [fh, fm] = from.split(':').map(Number);
   const [th, tm] = to.split(':').map(Number);
-  const mins = (th * 60 + tm) - (fh * 60 + fm);
+  if (isNaN(fh) || isNaN(fm) || isNaN(th) || isNaN(tm)) return 1;
+  const mins = Math.max(0, (th * 60 + tm) - (fh * 60 + fm));
   if (mins < 120) return 1;
   if (mins < 240) return 2;
   if (mins < 360) return 3;

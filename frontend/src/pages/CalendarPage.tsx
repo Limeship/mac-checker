@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { fetchPresence } from '../lib/db';
 import type { PresenceEntry } from '../lib/types';
 import { Tooltip, type TooltipEntry } from '../components/Tooltip';
@@ -38,19 +38,16 @@ export function CalendarPage() {
     setLoading(true);
     try {
       const range = view === 'week' ? weekRangeForOffset(offset) : monthRangeForOffset(offset);
-      const data = await fetchPresence(range.start, range.end);
+      const rawData = await fetchPresence(range.start, range.end);
+      const data = Array.isArray(rawData) ? rawData : [];
       setEntries(data);
 
-      // build filter sets from data the first time
-      setFilter(prev => {
-        const people = new Set([...data.map(e => e.userName)]);
-        const devices = new Set([...data.filter(e => e.type === 'device').map(e => e.deviceDesc ?? '')].filter(Boolean));
-        // if filter is empty (first load), activate all
-        if (prev.people.size === 0) return { people, devices };
-        return prev;
-      });
-      setAllPeople([...new Set(data.map(e => e.userName))].sort());
-      setAllDevices([...new Set(data.filter(e => e.type === 'device').map(e => e.deviceDesc ?? ''))].filter(Boolean).sort());
+      const people = new Set([...data.map(e => e.userName)].filter(Boolean));
+      const devices = new Set([...data.filter(e => e.type === 'device').map(e => e.deviceDesc ?? '')].filter(Boolean));
+
+      setFilter({ people, devices });
+      setAllPeople([...people].sort());
+      setAllDevices([...devices].sort());
     } finally {
       setLoading(false);
     }
@@ -230,7 +227,7 @@ function WeekGrid({ offset, entries, visiblePeople, onHover, onLeave }: {
       {visiblePeople.map(personName => {
         const personEntries = entries.filter(e => e.userName === personName);
         return (
-          <>
+          <React.Fragment key={personName}>
             <div key={`label-${personName}`} className={styles.personLabel}>
               <span className={styles.personName}>{emoji(personName)} {personName}</span>
               <div className={styles.personDevices}>
@@ -274,7 +271,7 @@ function WeekGrid({ offset, entries, visiblePeople, onHover, onLeave }: {
                 </div>
               );
             })}
-          </>
+          </React.Fragment>
         );
       })}
     </div>
