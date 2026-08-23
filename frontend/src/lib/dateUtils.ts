@@ -43,6 +43,13 @@ export function signalStrength(from: string, to: string): number {
   return 4;
 }
 
+export function toISODateStr(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 export function weekRangeForOffset(offset: number): { start: Date; end: Date } {
   const monday = getMondayOf(offset);
   const sunday = new Date(monday);

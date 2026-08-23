@@ -52,10 +52,12 @@ app.route("/", authed);
 const pub = new Hono();
 
 pub.get("/presence", async (c) => {
+    console.log("Presence requested");
     const start = c.req.query("start");
-    const end   = c.req.query("end");
+    const end = c.req.query("end");
     if (!start || !end) return c.json({ error: "start and end required" }, 400);
     try {
+        console.log("Presence requested from", start, "to", end);
         const result = await database.withDb(async (db) => {
             return await db.query(`
                 RETURN array::flatten([
@@ -64,23 +66,23 @@ pub.get("/presence", async (c) => {
                         device.user.name AS userName,
                         device.description AS deviceDesc,
                         'device' AS type,
-                        time::group(timestamp, 'day') AS day,
+                        time::format(timestamp, '%Y-%m-%d') AS day,
                         time::format(time::min(timestamp), '%H:%M') AS firstTime,
                         time::format(time::max(timestamp), '%H:%M') AS lastTime
                      FROM device_logs
-                     WHERE timestamp >= $start AND timestamp <= $end
+                     WHERE timestamp >= <datetime>$start AND timestamp <= <datetime>$end
                        AND device.ignored != true
-                     GROUP BY device.user.id, device.description, day),
+                     GROUP BY device.user.id, device.user.name, device.description, day),
                     (SELECT
                         user.id   AS userId,
                         user.name AS userName,
                         'robin'   AS type,
                         'Robin'   AS deviceDesc,
-                        time::group(start, 'day') AS day,
+                        time::format(start, '%Y-%m-%d') AS day,
                         time::format(start, '%H:%M') AS firstTime,
                         time::format(end,   '%H:%M') AS lastTime
                      FROM robin_logs
-                     WHERE start >= $start AND start <= $end)
+                     WHERE start >= <datetime>$start AND start <= <datetime>$end)
                 ]);
             `, { start, end });
         });
@@ -102,7 +104,7 @@ pub.get("/people", async (c) => {
 
             const twentyMinsAgo = new Date(Date.now() - 20 * 60 * 1000).toISOString();
             const [recentLogs] = await db.query<[Array<{ device: string }>]>(
-                `SELECT device FROM device_logs WHERE timestamp >= $ts GROUP BY device`,
+                `SELECT device FROM device_logs WHERE timestamp >= <datetime>$ts GROUP BY device`,
                 { ts: twentyMinsAgo }
             );
             const onlineSet = new Set((recentLogs ?? []).map((r: any) => String(r.device)));
@@ -131,7 +133,7 @@ pub.get("/people", async (c) => {
 
 pub.get("/stats", async (c) => {
     const start = c.req.query("start");
-    const end   = c.req.query("end");
+    const end = c.req.query("end");
     if (!start || !end) return c.json({ error: "start and end required" }, 400);
     try {
         const result = await database.withDb(async (db) => {
@@ -139,14 +141,14 @@ pub.get("/stats", async (c) => {
                 SELECT
                     device.user.id   AS userId,
                     device.user.name AS userName,
-                    time::group(timestamp, 'day') AS day,
+                    time::format(timestamp, '%Y-%m-%d') AS day,
                     time::format(time::min(timestamp), '%H:%M') AS firstTime,
                     time::format(time::max(timestamp), '%H:%M') AS lastTime,
                     math::round((time::max(timestamp) - time::min(timestamp)) / 1000000 / 60) AS minutes
                 FROM device_logs
-                WHERE timestamp >= $start AND timestamp <= $end
+                WHERE timestamp >= <datetime>$start AND timestamp <= <datetime>$end
                   AND device.ignored != true
-                GROUP BY device.user.id, day
+                GROUP BY device.user.id, device.user.name, day
                 ORDER BY userId, day
             `, { start, end });
 
@@ -155,27 +157,28 @@ pub.get("/stats", async (c) => {
                     device.id          AS deviceId,
                     device.description AS deviceDesc,
                     device.user.name   AS userName,
-                    array::len(array::distinct(array::group(time::group(timestamp, 'day')))) AS days
+                    array::len(array::distinct(array::group(time::format(timestamp, '%Y-%m-%d')))) AS days
                 FROM device_logs
-                WHERE timestamp >= $start AND timestamp <= $end
+                WHERE timestamp >= <datetime>$start AND timestamp <= <datetime>$end
                   AND device.ignored != true
-                GROUP BY device.id
+                GROUP BY device.id, device.description, device.user.name
             `, { start, end });
 
-            const [multiRows] = await db.query<[Array<any>]>(`
+            const [multiRowsRaw] = await db.query<[Array<any>]>(`
                 SELECT
                     device.user.id   AS userId,
                     device.user.name AS userName,
-                    time::group(timestamp, 'day') AS day,
+                    time::format(timestamp, '%Y-%m-%d') AS day,
                     array::len(array::distinct(array::group(device.id))) AS deviceCount
                 FROM device_logs
-                WHERE timestamp >= $start AND timestamp <= $end
+                WHERE timestamp >= <datetime>$start AND timestamp <= <datetime>$end
                   AND device.ignored != true
-                GROUP BY device.user.id, day
-                HAVING deviceCount > 1
+                GROUP BY device.user.id, device.user.name, day
             `, { start, end });
 
-            return { presence: presence ?? [], deviceRows: deviceRows ?? [], multiRows: multiRows ?? [] };
+            const multiRows = (multiRowsRaw ?? []).filter((r: any) => (r.deviceCount ?? 0) > 1);
+
+            return { presence: presence ?? [], deviceRows: deviceRows ?? [], multiRows };
         });
         return c.json(result);
     } catch (err: any) {

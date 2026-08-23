@@ -5,6 +5,7 @@ import { Tooltip, type TooltipEntry } from '../components/Tooltip';
 import {
   getMondayOf, isToday, fmtShort, fmtWeekday, fmtMonthYear,
   minsToHours, signalStrength, weekRangeForOffset, monthRangeForOffset,
+  toISODateStr,
 } from '../lib/dateUtils';
 import styles from './CalendarPage.module.css';
 
@@ -239,8 +240,8 @@ function WeekGrid({ offset, entries, visiblePeople, onHover, onLeave }: {
               </div>
             </div>
             {days.map((d, di) => {
-              const dayStr = d.toISOString().slice(0, 10);
-              const dayEntries = personEntries.filter(e => e.day === dayStr);
+              const dayStr = toISODateStr(d);
+              const dayEntries = personEntries.filter(e => (e.day || '').slice(0, 10) === dayStr);
               return (
                 <div
                   key={`cell-${personName}-${di}`}
@@ -309,8 +310,8 @@ function MonthGrid({ offset, entries, onHover, onLeave }: {
           const day = i + 1;
           const date = new Date(year, month, day);
           const dowRaw = date.getDay(), dow = dowRaw === 0 ? 6 : dowRaw - 1;
-          const dayStr = date.toISOString().slice(0, 10);
-          const dayEntries = entries.filter(e => e.day === dayStr);
+          const dayStr = toISODateStr(date);
+          const dayEntries = entries.filter(e => (e.day || '').slice(0, 10) === dayStr);
           const isWknd = dow >= 5;
 
           // build tooltip entries grouped by person

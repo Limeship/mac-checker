@@ -11,21 +11,21 @@ async function startApp() {
   try {
     // Initial setup tasks - each uses its own short-lived connection
     await database.withDb(async (db) => {
-      await initCollections(db);
-      await syncDevices(db);
+      //await initCollections(db);
+      //await syncDevices(db);
     });
 
     try {
       logger.info(`⏰ Running initial job at ${new Date().toISOString()}`);
       await database.withDb(async (db) => {
-        await runJob(db);
+        //await runJob(db);
       });
     } catch (jobErr: any) {
       logger.warn("⚠️ Initial job failed:", jobErr);
     }
 
     const scheduler = new Scheduler(database);
-    scheduler.start();
+    //scheduler.start();
 
     // Start Hono server
     logger.info("🌐 Server running at http://localhost:3000");
