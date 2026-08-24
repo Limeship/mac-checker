@@ -50,13 +50,7 @@ authed.get("/data", async (c) => {
     }
 });
 
-app.route("/", authed);
-
-// ── PUBLIC ROUTES (no auth — for frontend via internal proxy) ──
-
-const pub = new Hono();
-
-pub.get("/presence", async (c) => {
+authed.get("/presence", async (c) => {
     const start = c.req.query("start");
     const end = c.req.query("end");
     if (!start || !end) return c.json({ error: "start and end required" }, 400);
@@ -114,7 +108,7 @@ pub.get("/presence", async (c) => {
     }
 });
 
-pub.get("/people", async (c) => {
+authed.get("/people", async (c) => {
     logger.info("🔍 GET /api/people");
     try {
         const result = await database.withDb(async (db) => {
@@ -148,7 +142,7 @@ pub.get("/people", async (c) => {
     }
 });
 
-pub.get("/stats", async (c) => {
+authed.get("/stats", async (c) => {
     const start = c.req.query("start");
     const end = c.req.query("end");
     if (!start || !end) return c.json({ error: "start and end required" }, 400);
@@ -226,6 +220,6 @@ pub.get("/stats", async (c) => {
     }
 });
 
-app.route("/api", pub);
+app.route("/", authed);
 
 export { app };
