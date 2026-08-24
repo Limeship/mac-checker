@@ -64,7 +64,6 @@ pub.get("/presence", async (c) => {
                         device.user.id AS userId,
                         device.user.name AS userName,
                         device.description AS deviceDesc,
-                        'device' AS type,
                         time::group(timestamp, 'day') AS day,
                         time::format(time::min(timestamp), '%H:%M') AS firstTime,
                         time::format(time::max(timestamp), '%H:%M') AS lastTime
@@ -73,7 +72,7 @@ pub.get("/presence", async (c) => {
                       AND timestamp <= <datetime>$end
                       AND device.ignored != true
                       AND device.user != NONE
-                    GROUP BY device.user.id, device.description, day
+                    GROUP BY device.user.id, device.user.name, device.description, day
                     ORDER BY day
                 `, { start, end }),
                 db.query<[any[]]>(`
@@ -81,7 +80,6 @@ pub.get("/presence", async (c) => {
                         user.id AS userId,
                         user.name AS userName,
                         'Robin' AS deviceDesc,
-                        'robin' AS type,
                         time::group(start, 'day') AS day,
                         time::format(start, '%H:%M') AS firstTime,
                         time::format(end, '%H:%M') AS lastTime
@@ -91,7 +89,10 @@ pub.get("/presence", async (c) => {
                 `, { start, end }),
             ]);
 
-            return [...(deviceRes[0] ?? []), ...(robinRes[0] ?? [])];
+            return [
+                ...(deviceRes[0] ?? []).map((row) => ({ ...row, type: "device" })),
+                ...(robinRes[0] ?? []).map((row) => ({ ...row, type: "robin" })),
+            ];
         });
 
         console.log(`Presence returned ${items.length} records`);
