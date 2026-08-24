@@ -34,8 +34,7 @@ ENV CodaPeopleTableId=your_res_doc_id
 
 ENV RouterIp=192.168.1.1
 ENV RouterPort=8443
-ENV RouterUser=admin
-ENV RouterPassword=password
+ENV RouterApiKey=your_api_key
 
 ENV RobinOrganizationId=
 ENV RobinEmail=

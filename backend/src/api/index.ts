@@ -21,10 +21,11 @@ authed.use("*", async (c, next) => {
 authed.get("/data", async (c) => {
     const days = c.req.query("days") || "7";
     const duration = `${days}d`;
-    logger.info(`🔍 GET /data [days=${days}]`);
+    logger.info(`🔍 GET /data [days=${days}, duration=${duration}]`);
     try {
         const result = await database.withDb(async (db) => {
-            const res = await db.query<[any[]]>(`
+            const raw = await db.query<[any[], any[]]>(`
+                SELECT count() AS totalInRange FROM device_logs WHERE timestamp > time::now() - <duration>$duration GROUP ALL;
                 RETURN array::flatten([
                     (SELECT device.user.name AS user,
                         device.description AS description,
@@ -38,7 +39,8 @@ authed.get("/data", async (c) => {
                     (SELECT start AS first_time, end AS last_time, user.name AS user, 'Robin' AS description, time::group(start, 'day') AS day FROM robin_logs where start > time::now() - <duration>$duration)
                 ]);
             `, { duration });
-            return res[0] ?? [];
+            logger.debug(`🔬 /data query diagnostics: logs in range=${raw[0]?.[0]?.totalInRange ?? 0}, raw result=${JSON.stringify(raw[1])}`);
+            return raw[1] ?? [];
         });
         logger.info(`📦 /data returned ${Array.isArray(result) ? result.length : 0} records`);
         return c.json(result);

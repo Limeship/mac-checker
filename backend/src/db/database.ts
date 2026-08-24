@@ -34,6 +34,18 @@ export class Database {
             });
             await db.use({ namespace: CONFIG.SURREAL_NS, database: CONFIG.SURREAL_DB });
             logger.info(`✅ SurrealDB connection established and configured for NS: "${CONFIG.SURREAL_NS}", DB: "${CONFIG.SURREAL_DB}"`);
+            
+            // Diagnostic check: verify tables and counts
+            try {
+                const [logCount, userCount, robinCount] = await db.query<[any[], any[], any[]]>(`
+                    SELECT count() AS total FROM device_logs GROUP ALL;
+                    SELECT count() AS total FROM users GROUP ALL;
+                    SELECT count() AS total FROM robin_logs GROUP ALL;
+                `);
+                logger.info(`📊 DB Contents -> device_logs: ${logCount?.[0]?.total ?? 0}, users: ${userCount?.[0]?.total ?? 0}, robin_logs: ${robinCount?.[0]?.total ?? 0}`);
+            } catch (diagErr: any) {
+                logger.warn(`⚠️ DB diagnostic query failed: ${diagErr?.message || diagErr}`);
+            }
             return db;
         } catch (err: any) {
             logger.error(`❌ Failed to connect/authenticate to SurrealDB at ${CONFIG.SURREAL_URL}:`, err);

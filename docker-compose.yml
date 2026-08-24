@@ -36,8 +36,7 @@ services:
       - CodaPeopleTableId=your_people_table_id
       - RouterIp=192.168.1.1
       - RouterPort=8443
-      - RouterUser=admin
-      - RouterPassword=password
+      - RouterApiKey=your_api_key
       - RobinOrganizationId=your_org_id
       - RobinEmail=your_email
       - RobinPassword=your_password

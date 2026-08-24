@@ -16,8 +16,6 @@ export const CONFIG = {
     UNIFI_HOST: process.env.RouterIp || "192.168.1.1",
     UNIFI_PORT: parseInt(process.env.RouterPort || "8443", 10),
     UNIFI_API_KEY: process.env.RouterApiKey || "",
-    UNIFI_USERNAME: process.env.RouterUser || "",
-    UNIFI_PASSWORD: process.env.RouterPassword || "",
 
     // Robin Configuration
     ROBIN_ORGANIZATION_ID: process.env.RobinOrganizationId || "",
