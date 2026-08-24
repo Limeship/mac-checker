@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react';
-import { fetchStats, type StatsResult } from '../lib/db';
+import { fetchStats, emoji, type StatsResult } from '../lib/db';
 
 type Period = 'monthly' | 'yearly';
-
-const EMOJI_MAP: Record<string, string> = {};
-function emoji(name: string) { return EMOJI_MAP[name] ?? '👤'; }
 
 function periodRange(period: Period): { start: Date; end: Date } {
   const now = new Date();

@@ -9,12 +9,12 @@ async function get<T>(path: string): Promise<T> {
   return res.json();
 }
 
-// Emoji overrides — hardcoded per person name
-const EMOJI_MAP: Record<string, string> = {
+// Emoji overrides — hardcoded per person name. Add entries here to customise.
+export const EMOJI_MAP: Record<string, string> = {
   // 'Alice K.': '🧑‍💻',
 };
 
-function emoji(name: string): string {
+export function emoji(name: string): string {
   return EMOJI_MAP[name] ?? '👤';
 }
 
@@ -105,8 +105,12 @@ function computeStats(
     const sortedDays = userRows.map((r: any) => r.day).sort();
     let streak = 1, maxStreak = 1;
     for (let i = 1; i < sortedDays.length; i++) {
-      const diff = (new Date(sortedDays[i]).getTime() - new Date(sortedDays[i-1]).getTime()) / 86400000;
-      if (diff === 1) { streak++; maxStreak = Math.max(maxStreak, streak); }
+      const prev = new Date(sortedDays[i - 1]);
+      const curr = new Date(sortedDays[i]);
+      // Advance prev by calendar days, skipping weekends, to find the next working day
+      const next = new Date(prev);
+      do { next.setDate(next.getDate() + 1); } while (next.getDay() === 0 || next.getDay() === 6);
+      if (curr.toDateString() === next.toDateString()) { streak++; maxStreak = Math.max(maxStreak, streak); }
       else streak = 1;
     }
 

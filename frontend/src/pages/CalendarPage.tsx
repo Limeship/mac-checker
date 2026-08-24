@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { fetchPresence } from '../lib/db';
+import { fetchPresence, emoji } from '../lib/db';
 import type { PresenceEntry } from '../lib/types';
 import { Tooltip, type TooltipEntry } from '../components/Tooltip';
 import {
@@ -7,9 +7,6 @@ import {
   minsToHours, signalStrength, weekRangeForOffset, monthRangeForOffset,
   toISODateStr,
 } from '../lib/dateUtils';
-
-const EMOJI_MAP: Record<string, string> = {};
-function emoji(name: string) { return EMOJI_MAP[name] ?? '👤'; }
 
 type View = 'week' | 'month';
 

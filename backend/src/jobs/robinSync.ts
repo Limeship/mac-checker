@@ -24,16 +24,21 @@ export async function syncRobinReservations(db: Surreal) {
                 continue;
             }
 
+            let inserted = 0;
             for (const res of reservations) {
+                const start = new Date(res.startTime);
+                const end = new Date(res.endTime);
+                const existing = await db.query<[any[]]>(
+                    `SELECT id FROM ${COLLECTIONS.ROBIN_LOGS} WHERE user = $user AND start = <datetime>$start LIMIT 1`,
+                    { user: user.id, start: start.toISOString() }
+                );
+                if ((existing[0] ?? []).length > 0) continue;
                 await db.query(`CREATE ${COLLECTIONS.ROBIN_LOGS} CONTENT $data`, {
-                    data: {
-                        user: user.id,
-                        start: new Date(res.startTime),
-                        end: new Date(res.endTime)
-                    }
+                    data: { user: user.id, start, end }
                 });
+                inserted++;
             }
-            logger.info(`Logged ${reservations.length} Robin sessions for ${user.name}`);
+            logger.info(`Logged ${inserted}/${reservations.length} new Robin sessions for ${user.name}`);
         }
         logger.info("✅ Robin reservations sync complete.");
     } catch (err: any) {

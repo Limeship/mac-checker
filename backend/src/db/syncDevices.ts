@@ -22,35 +22,48 @@ async function syncUsers(db: Surreal): Promise<Map<string, string> | null> {
         return null;
     }
 
-    const userMap = new Map<string, string>(); // name -> record id
-
     try {
         const results = await db.query<[DbUser[]]>(`SELECT id, name, robinId FROM ${COLLECTIONS.USERS}`);
         const dbUsers = results[0];
-        const dbUsersMap = new Map(dbUsers.map(u => [u.name, u]));
+        const dbByName = new Map(dbUsers.map(u => [u.name, u]));
+        const codaByName = new Map(codaPeople.map(p => [p.name, p]));
 
-        for (const person of codaPeople) {
-            const existingUser = dbUsersMap.get(person.name);
-            if (!existingUser) {
-                logger.info(`➕ Adding new user: ${person.name}`);
-                const [newUser] = await db.query<[any]>(`CREATE ${COLLECTIONS.USERS} CONTENT $data`, {
-                    data: { name: person.name, robinId: person.robinId }
-                });
-                userMap.set(person.name, newUser[0].id);
-            } else {
-                if (existingUser.robinId !== person.robinId) {
-                    logger.info(`🔄 Updating user: ${person.name}`);
-                    await db.query(`UPDATE ${existingUser.id} MERGE $data`, {
-                        data: { robinId: person.robinId }
-                    });
-                }
-                userMap.set(person.name, existingUser.id);
-                dbUsersMap.delete(person.name);
+        const toCreate = codaPeople.filter(p => !dbByName.has(p.name));
+        const toUpdate = codaPeople.filter(p => {
+            const ex = dbByName.get(p.name);
+            return ex && ex.robinId !== p.robinId;
+        });
+        const toDelete = dbUsers.filter(u => !codaByName.has(u.name));
+
+        if (toCreate.length) {
+            logger.info(`➕ Creating ${toCreate.length} new user(s): ${toCreate.map(p => p.name).join(', ')}`);
+            const created = await db.query<[any[]]>(
+                `INSERT INTO ${COLLECTIONS.USERS} $data`,
+                { data: toCreate.map(p => ({ name: p.name, robinId: p.robinId })) }
+            );
+            // Add newly created users to the lookup map
+            for (const u of (created[0] ?? [])) {
+                dbByName.set(u.name, u);
             }
         }
-        for (const [name, record] of dbUsersMap.entries()) {
-            logger.info(`🗑️ Deleting user: ${record.name} (${record.robinId})`);
-            await db.query(`DELETE ${record.id}`);
+
+        for (const p of toUpdate) {
+            const ex = dbByName.get(p.name)!;
+            logger.info(`🔄 Updating user: ${p.name}`);
+            await db.query(`UPDATE ${ex.id} MERGE $data`, { data: { robinId: p.robinId } });
+        }
+
+        if (toDelete.length) {
+            logger.info(`🗑️ Deleting ${toDelete.length} removed user(s): ${toDelete.map(u => u.name).join(', ')}`);
+            const ids = toDelete.map(u => u.id);
+            await db.query(`DELETE ${COLLECTIONS.USERS} WHERE id IN $ids`, { ids });
+        }
+
+        // Build name → record id map for device sync
+        const userMap = new Map<string, string>();
+        for (const p of codaPeople) {
+            const record = dbByName.get(p.name);
+            if (record) userMap.set(p.name, record.id);
         }
         return userMap;
     } catch (err: any) {
@@ -71,54 +84,67 @@ async function syncDevicesInternal(db: Surreal, userMap: Map<string, string>) {
     try {
         const results = await db.query<[DbDevice[]]>(`SELECT id, user, description, mac, ignored FROM ${COLLECTIONS.DEVICES}`);
         const dbDevices = results[0];
-        const dbDevicesMap = new Map(dbDevices.map(d => [d.mac.toLowerCase(), d]));
+        const dbByMac = new Map(dbDevices.map(d => [d.mac.toLowerCase(), d]));
+
+        const toCreate: typeof codaDevices = [];
+        const toUpdate: Array<{ id: string; data: object }> = [];
 
         for (const codaDevice of codaDevices) {
             const mac = codaDevice.mac.toLowerCase();
-            const existingDevice = dbDevicesMap.get(mac);
+            const existing = dbByMac.get(mac);
             const userRecordId = userMap.get(codaDevice.user);
 
             if (!userRecordId) {
-                logger.warn(`⚠️ User ${codaDevice.user} not found for device ${codaDevice.mac}, skipping device sync.`);
+                logger.warn(`⚠️ User ${codaDevice.user} not found for device ${codaDevice.mac}, skipping.`);
+                dbByMac.delete(mac);
                 continue;
             }
 
-            if (existingDevice && existingDevice.ignored) {
-                logger.info(`⏩ Skipping update for ignored device: ${codaDevice.user}->${codaDevice.description} (${codaDevice.mac})`);
-                dbDevicesMap.delete(mac);
+            if (existing?.ignored) {
+                logger.info(`⏩ Skipping ignored device: ${codaDevice.user}->${codaDevice.description} (${codaDevice.mac})`);
+                dbByMac.delete(mac);
                 continue;
             }
 
-            const deviceData = {
-                user: userRecordId,
-                description: codaDevice.description,
-                mac: codaDevice.mac,
-                ignored: false
-            };
+            const data = { user: userRecordId, description: codaDevice.description, mac: codaDevice.mac, ignored: false };
 
-            if (!existingDevice) {
-                logger.info(`➕ Adding new device: ${codaDevice.user}->${codaDevice.description} (${codaDevice.mac})`);
-                await db.query(`CREATE ${COLLECTIONS.DEVICES} CONTENT $data`, {
-                    data: deviceData
-                });
+            if (!existing) {
+                toCreate.push(codaDevice);
             } else {
-                if (existingDevice.user !== userRecordId || existingDevice.description !== codaDevice.description || existingDevice.mac !== codaDevice.mac) {
-                    logger.info(`🔄 Updating device: ${codaDevice.user}->${codaDevice.description} (${codaDevice.mac})`);
-                    await db.query(`UPDATE ${existingDevice.id} MERGE $data`, {
-                        data: deviceData
-                    });
-                }
-                dbDevicesMap.delete(mac);
+                const changed = existing.user !== userRecordId || existing.description !== codaDevice.description || existing.mac !== codaDevice.mac;
+                if (changed) toUpdate.push({ id: existing.id, data });
+                dbByMac.delete(mac);
             }
         }
 
-        for (const [mac, record] of dbDevicesMap.entries()) {
-            if (record.ignored) {
-                logger.info(`⏩ Skipping deletion of ignored device: ${record.description} (${record.mac})`);
-                continue;
-            }
-            logger.info(`🗑️ Deleting device: ${record.description} (${record.mac})`);
-            await db.query(`DELETE ${record.id}`);
+        // Remaining entries in dbByMac were not in Coda — delete non-ignored ones
+        const toDelete = [...dbByMac.values()].filter(d => !d.ignored);
+
+        if (toCreate.length) {
+            logger.info(`➕ Creating ${toCreate.length} new device(s)`);
+            await db.query(
+                `INSERT INTO ${COLLECTIONS.DEVICES} $data`,
+                {
+                    data: toCreate.map(d => ({
+                        user: userMap.get(d.user),
+                        description: d.description,
+                        mac: d.mac,
+                        ignored: false,
+                    }))
+                }
+            );
+        }
+
+        // Updates still need to be individual (each has a different id + different fields)
+        for (const { id, data } of toUpdate) {
+            logger.info(`🔄 Updating device: ${id}`);
+            await db.query(`UPDATE ${id} MERGE $data`, { data });
+        }
+
+        if (toDelete.length) {
+            logger.info(`🗑️ Deleting ${toDelete.length} removed device(s)`);
+            const ids = toDelete.map(d => d.id);
+            await db.query(`DELETE ${COLLECTIONS.DEVICES} WHERE id IN $ids`, { ids });
         }
 
         logger.info("✅ Sync complete.");

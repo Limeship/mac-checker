@@ -34,6 +34,7 @@ export async function getLocalDevices(): Promise<LocalDevice[]> {
                     password: CONFIG.UNIFI_PASSWORD,
                     rememberMe: true
                 }),
+                signal: AbortSignal.timeout(10000),
                 // @ts-ignore - Bun-specific TLS option
                 tls: { rejectUnauthorized: false }
             });
@@ -62,6 +63,7 @@ export async function getLocalDevices(): Promise<LocalDevice[]> {
         // We'll stick with the proven proxy endpoint first.
         const devicesRes = await fetch(`${baseUrl}/proxy/network/api/s/default/stat/sta/`, {
             headers,
+            signal: AbortSignal.timeout(10000),
             // @ts-ignore - Bun-specific TLS option
             tls: { rejectUnauthorized: false }
         });
