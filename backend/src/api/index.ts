@@ -21,9 +21,10 @@ authed.use("*", async (c, next) => {
 authed.get("/data", async (c) => {
     const days = c.req.query("days") || "7";
     const duration = `${days}d`;
+    logger.info(`🔍 GET /data [days=${days}]`);
     try {
         const result = await database.withDb(async (db) => {
-            return await db.query(`
+            const res = await db.query<[any[]]>(`
                 RETURN array::flatten([
                     (SELECT device.user.name AS user,
                         device.description AS description,
@@ -37,7 +38,9 @@ authed.get("/data", async (c) => {
                     (SELECT start AS first_time, end AS last_time, user.name AS user, 'Robin' AS description, time::group(start, 'day') AS day FROM robin_logs where start > time::now() - <duration>$duration)
                 ]);
             `, { duration });
+            return res[0] ?? [];
         });
+        logger.info(`📦 /data returned ${Array.isArray(result) ? result.length : 0} records`);
         return c.json(result);
     } catch (err: any) {
         logger.error("API error in /data:", err);
@@ -56,6 +59,8 @@ pub.get("/presence", async (c) => {
     const end = c.req.query("end");
     if (!start || !end) return c.json({ error: "start and end required" }, 400);
     if (isNaN(Date.parse(start)) || isNaN(Date.parse(end))) return c.json({ error: "start and end must be valid ISO dates" }, 400);
+
+    logger.info(`🔍 GET /api/presence [start=${start}, end=${end}]`);
     try {
         const items = await database.withDb(async (db) => {
             const [deviceRes, robinRes] = await Promise.all([
@@ -89,13 +94,17 @@ pub.get("/presence", async (c) => {
                 `, { start, end }),
             ]);
 
+            const deviceCount = deviceRes[0]?.length ?? 0;
+            const robinCount = robinRes[0]?.length ?? 0;
+            logger.info(`📊 /api/presence query results: ${deviceCount} device rows, ${robinCount} robin rows`);
+
             return [
                 ...(deviceRes[0] ?? []).map((row) => ({ ...row, type: "device" })),
                 ...(robinRes[0] ?? []).map((row) => ({ ...row, type: "robin" })),
             ];
         });
 
-        console.log(`Presence returned ${items.length} records`);
+        logger.info(`📦 /api/presence returned ${items.length} total records`);
         return c.json(items);
     } catch (err: any) {
         logger.error("API error in /api/presence:", err);
@@ -104,6 +113,7 @@ pub.get("/presence", async (c) => {
 });
 
 pub.get("/people", async (c) => {
+    logger.info("🔍 GET /api/people");
     try {
         const result = await database.withDb(async (db) => {
             const cutoff = new Date(Date.now() - 20 * 60 * 1000).toISOString();
@@ -125,7 +135,9 @@ pub.get("/people", async (c) => {
                 FROM users
                 ORDER BY name
             `, { cutoff });
-            return rows ?? [];
+            const list = rows ?? [];
+            logger.info(`📊 /api/people query results: ${list.length} users`);
+            return list;
         });
         return c.json(result);
     } catch (err: any) {
@@ -139,6 +151,8 @@ pub.get("/stats", async (c) => {
     const end = c.req.query("end");
     if (!start || !end) return c.json({ error: "start and end required" }, 400);
     if (isNaN(Date.parse(start)) || isNaN(Date.parse(end))) return c.json({ error: "start and end must be valid ISO dates" }, 400);
+
+    logger.info(`🔍 GET /api/stats [start=${start}, end=${end}]`);
     try {
         const result = await database.withDb(async (db) => {
             const [presenceRes, deviceRes, multiRes] = await Promise.all([
@@ -192,10 +206,15 @@ pub.get("/stats", async (c) => {
                 `, { start, end }),
             ]);
 
+            const presence = presenceRes[0] ?? [];
+            const deviceRows = deviceRes[0] ?? [];
+            const multiRows = multiRes[0] ?? [];
+            logger.info(`📊 /api/stats results: ${presence.length} presence rows, ${deviceRows.length} device uptime rows, ${multiRows.length} multi-device rows`);
+
             return {
-                presence: presenceRes[0] ?? [],
-                deviceRows: deviceRes[0] ?? [],
-                multiRows: multiRes[0] ?? [],
+                presence,
+                deviceRows,
+                multiRows,
             };
         });
         return c.json(result);
