@@ -8,13 +8,10 @@ const API_KEY = process.env.API_KEY ?? '';
 Bun.serve({
   port: PORT,
   async fetch(req) {
-    console.log(" request ");
-
     const url = new URL(req.url);
-    console.log("Presence requested from", url.pathname, "to", url.search);
     // Proxy /api/* to the backend, injecting the API key server-side
     if (url.pathname.startsWith('/api/')) {
-      const target = BACKEND_URL + url.pathname + url.search;
+      const target = BACKEND_URL + url.pathname.replaceAll("/api/", "") + url.search;
       const headers = new Headers(req.headers);
       if (API_KEY) headers.set('Authorization', `Bearer ${API_KEY}`);
       return fetch(target, {
