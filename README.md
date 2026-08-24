@@ -1,5 +1,7 @@
 # Lime Tracker
 
+[![Release](https://github.com/Limeship/mac-checker/actions/workflows/release.yml/badge.svg)](https://github.com/Limeship/mac-checker/actions/workflows/release.yml)
+
 Tracks office presence by detecting devices on the local network via UniFi, and syncing desk reservations from Robin. Data is stored in SurrealDB.
 
 ## Structure

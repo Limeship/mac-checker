@@ -14,6 +14,11 @@ export default defineConfig(({ mode }) => {
   const apiKey = env.API_KEY || (env.ApiKeys ? env.ApiKeys.split(',')[0].trim() : '')
   const backendUrl = env.BACKEND_URL || 'http://localhost:3000'
 
+  const proxyHeaders: Record<string, string> = {}
+  if (apiKey) {
+    proxyHeaders['Authorization'] = `Bearer ${apiKey}`
+  }
+
   return {
     plugins: [tailwindcss(), react()],
     server: {
@@ -23,7 +28,7 @@ export default defineConfig(({ mode }) => {
           target: backendUrl,
           changeOrigin: true,
           secure: false,
-          headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {},
+          headers: proxyHeaders,
         },
       },
     },
