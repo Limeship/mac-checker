@@ -58,20 +58,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Lowercase Repository Name
-        run: echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+      - name: Lowercase Repository Owner
+        run: echo "OWNER=${GITHUB_REPOSITORY_OWNER,,}" >>${GITHUB_ENV}
 
       - name: Build and push backend Docker image
         uses: docker/build-push-action@v7
         with:
           context: ./backend
           push: true
-          tags: ghcr.io/${{ env.REPO }}/mac-checker:latest,ghcr.io/${{ env.REPO }}/mac-checker:${{ needs.release.outputs.new_release_version }}
+          tags: ghcr.io/${{ env.OWNER }}/lime-tracker-backend:latest,ghcr.io/${{ env.OWNER }}/lime-tracker-backend:${{ needs.release.outputs.new_release_version }}
 
       - name: Build and push frontend Docker image
         uses: docker/build-push-action@v7
         with:
           context: ./frontend
           push: true
-          tags: ghcr.io/${{ env.REPO }}/lime-tracker:latest,ghcr.io/${{ env.REPO }}/lime-tracker:${{ needs.release.outputs.new_release_version }}
+          tags: ghcr.io/${{ env.OWNER }}/lime-tracker-frontend:latest,ghcr.io/${{ env.OWNER }}/lime-tracker-frontend:${{ needs.release.outputs.new_release_version }}
 
