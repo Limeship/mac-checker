@@ -1,9 +1,7 @@
-version: '3.8'
-
 services:
   surrealdb:
     image: surrealdb/surrealdb:latest
-    container_name: surrealdb
+    container_name: lime-tracker-surrealdb
     restart: unless-stopped
     volumes:
       - surrealdata:/data
@@ -11,41 +9,49 @@ services:
       - SURREAL_USER=root
       - SURREAL_PASS=root
     command: >
-      start --bind 0.0.0.0:8000
+      start --bind 0.0.0.0:8000 --log warn
       rocksdb:/data/rocksdb
+    healthcheck:
+      test: ["CMD", "/surreal", "isready", "--conn", "http://localhost:8000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
-  mac-checker:
-    image: ghcr.io/limeship/mac-checker:latest
-    container_name: mac-checker
+  backend:
+    image: ghcr.io/limeship/lime-tracker-backend:latest
+    container_name: lime-tracker-backend
     depends_on:
-      - surrealdb
+      surrealdb:
+        condition: service_healthy
     environment:
       - SurrealUrl=ws://surrealdb:8000/rpc
       - SurrealUser=root
       - SurrealPass=root
-      - SurrealNS=mac_checker
-      - SurrealDB=mac_checker
+      - SurrealNS=lime_tracker
+      - SurrealDB=lime_tracker
       - CodaApiToken=your_token_here
       - CodaDocumentId=your_doc_id
       - CodaDevicesTableId=your_table_id
-      - CodaPeopleTableId=your_res_doc_id
+      - CodaPeopleTableId=your_people_table_id
       - RouterIp=192.168.1.1
       - RouterPort=8443
       - RouterUser=admin
       - RouterPassword=password
+      - RobinOrganizationId=your_org_id
+      - RobinEmail=your_email
+      - RobinPassword=your_password
       - ApiKeys=sample_key_1,sample_key_2
-    volumes:
-      - ./backend/data:/data
     restart: unless-stopped
 
-  lime-tracker:
-    image: ghcr.io/limeship/lime-tracker:latest
-    container_name: lime-tracker
+  frontend:
+    image: ghcr.io/limeship/lime-tracker-frontend:latest
+    container_name: lime-tracker-frontend
     depends_on:
-      - mac-checker
+      - backend
     environment:
       - PORT=8080
-      - BACKEND_URL=http://mac-checker:3000
+      - BACKEND_URL=http://backend:3000
       - API_KEY=your_api_key_here
     ports:
       - "8080:8080"

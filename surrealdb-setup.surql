@@ -4,11 +4,11 @@
 -- Usage (from CLI):
 --   surreal sql --conn ws://localhost:8000/rpc \
 --               --user root --pass <root-pass> \
---               --ns mac_checker_test --db mac_checker \
+--               --ns lime_tracker --db lime_tracker \
 --               --file surrealdb-setup.surql
 
-USE NS mac_checker;
-USE DB mac_checker;
+USE NS lime_tracker;
+USE DB lime_tracker;
 
 -- Create a scoped database user with SELECT-only access
 DEFINE USER frontend ON DATABASE

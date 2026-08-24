@@ -24,8 +24,8 @@ EXPOSE 3000
 ENV SurrealUrl=ws://surrealdb:8000/rpc
 ENV SurrealUser=root
 ENV SurrealPass=root
-ENV SurrealNS=mac_checker
-ENV SurrealDB=mac_checker
+ENV SurrealNS=lime_tracker
+ENV SurrealDB=lime_tracker
 
 ENV CodaApiToken=your_token_here
 ENV CodaDocumentId=your_doc_id
@@ -37,9 +37,9 @@ ENV RouterPort=8443
 ENV RouterUser=admin
 ENV RouterPassword=password
 
-ENV RobinOrganizationId=your_org_id
-ENV RobinEmail=your_email
-ENV RobinPassword=your_password
+ENV RobinOrganizationId=
+ENV RobinEmail=
+ENV RobinPassword=
 
 ENV ApiKeys=sample_key_1,sample_key_2
 

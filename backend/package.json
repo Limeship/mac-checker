@@ -1,5 +1,5 @@
 {
-  "name": "jk-mac-checker",
+  "name": "lime-tracker-backend",
   "private": true,
   "version": "1.0.0",
   "main": "src/index.js",

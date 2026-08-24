@@ -3,8 +3,8 @@ export const CONFIG = {
     SURREAL_URL: process.env.SurrealUrl || "ws://localhost:8080/rpc",
     SURREAL_USER: process.env.SurrealUser || "root",
     SURREAL_PASS: process.env.SurrealPass || "root",
-    SURREAL_NS: process.env.SurrealNS || "mac_checker",
-    SURREAL_DB: process.env.SurrealDB || "mac_checker",
+    SURREAL_NS: process.env.SurrealNS || "lime_tracker",
+    SURREAL_DB: process.env.SurrealDB || "lime_tracker",
 
     // Coda Configuration
     CODA_API_TOKEN: process.env.CodaApiToken || "",
