@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { fetchStats, type StatsResult } from '../lib/db';
-import styles from './StatsPage.module.css';
 
 type Period = 'monthly' | 'yearly';
 
@@ -21,6 +20,36 @@ function periodRange(period: Period): { start: Date; end: Date } {
   };
 }
 
+function rankColor(i: number) {
+  if (i === 0) return 'text-[#F0C040]';
+  if (i === 1) return 'text-[#94A3B8]';
+  if (i === 2) return 'text-[#C08060]';
+  return 'text-muted';
+}
+
+function Leaderboard({ rows, color, mono }: {
+  rows: Array<{ name: string; value: string; pct: number }>;
+  color: string;
+  mono?: boolean;
+}) {
+  return (
+    <div className="flex flex-col border border-border rounded-[2px] overflow-hidden">
+      {rows.map((r, i) => (
+        <div key={r.name} className="grid items-center gap-2.5 bg-surface px-3 py-2.5 border-b border-border last:border-b-0 hover:bg-surface2 transition-colors" style={{gridTemplateColumns:'22px 1fr 72px'}}>
+          <span className={`font-mono text-[10px] ${rankColor(i)}`}>{i + 1}</span>
+          <div className="min-w-0">
+            <div className="font-medium text-[12px] text-text mb-1 whitespace-nowrap overflow-hidden text-ellipsis">{emoji(r.name)} {r.name}</div>
+            <div className="bg-surface2 h-0.5 overflow-hidden">
+              <div className="h-full transition-[width] duration-500" style={{ width: `${r.pct}%`, background: color }} />
+            </div>
+          </div>
+          <span className={`font-mono text-[10px] text-muted text-right ${mono ? 'font-mono' : ''}`}>{r.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function StatsPage() {
   const [period, setPeriod] = useState<Period>('monthly');
   const [stats, setStats]   = useState<StatsResult | null>(null);
@@ -33,32 +62,33 @@ export function StatsPage() {
   }, [period]);
 
   return (
-    <div className={styles.page}>
-      <div className={styles.topBar}>
-        <span className={styles.pageTitle}>Statistics</span>
-        <div className={styles.controls}>
-          <button className={`btn btn-sm ${period === 'monthly' ? 'active' : ''}`} onClick={() => setPeriod('monthly')}>This month</button>
-          <button className={`btn btn-sm ${period === 'yearly'  ? 'active' : ''}`} onClick={() => setPeriod('yearly')}>This year</button>
+    <div className="flex flex-col flex-1 overflow-hidden min-h-0">
+      <div className="border-b border-border bg-surface shrink-0">
+        <div className="max-w-[1100px] mx-auto px-8 flex items-center gap-3 h-11">
+          <span className="font-mono text-[11px] font-medium text-muted tracking-[0.08em] uppercase">Statistics</span>
+          <div className="flex gap-1.5">
+            <button className={`btn btn-sm ${period === 'monthly' ? 'active' : ''}`} onClick={() => setPeriod('monthly')}>This month</button>
+            <button className={`btn btn-sm ${period === 'yearly'  ? 'active' : ''}`} onClick={() => setPeriod('yearly')}>This year</button>
+          </div>
         </div>
       </div>
 
-      <div className={styles.scrollArea}>
+      <div className="flex-1 overflow-auto">
         {loading || !stats ? (
-          <div className={styles.loading}>Loading…</div>
+          <div className="py-16 text-center text-muted font-mono text-[11px]">Loading…</div>
         ) : (
-          <div className={styles.content}>
+          <div className="max-w-[1100px] mx-auto px-8 py-6 flex flex-col gap-7">
 
-            {/* Row 1: Days + Hours leaderboards */}
-            <div className={styles.row2}>
+            <div className="grid grid-cols-2 gap-6">
               <section>
-                <h3 className={styles.sectionTitle}>Days in office</h3>
+                <h3 className="font-mono text-[9px] font-medium tracking-[0.12em] uppercase text-muted mb-2">Days in office</h3>
                 <Leaderboard
                   rows={stats.daysInOffice.map(r => ({ name: r.userName, value: `${r.days} days`, pct: r.days / (stats.daysInOffice[0]?.days || 1) * 100 }))}
                   color="var(--accent)"
                 />
               </section>
               <section>
-                <h3 className={styles.sectionTitle}>Hours online</h3>
+                <h3 className="font-mono text-[9px] font-medium tracking-[0.12em] uppercase text-muted mb-2">Hours online</h3>
                 <Leaderboard
                   rows={stats.hoursOnline.map(r => ({ name: r.userName, value: `${r.hours}h`, pct: r.hours / (stats.hoursOnline[0]?.hours || 1) * 100 }))}
                   color="var(--accent2)"
@@ -66,26 +96,23 @@ export function StatsPage() {
               </section>
             </div>
 
-            {/* Row 2: Arrival/departure + avg hours */}
-            <div className={styles.row3}>
+            <div className="grid grid-cols-3 gap-6">
               <section>
-                <h3 className={styles.sectionTitle}>Earliest arrival (avg)</h3>
+                <h3 className="font-mono text-[9px] font-medium tracking-[0.12em] uppercase text-muted mb-2">Earliest arrival (avg)</h3>
                 <Leaderboard
                   rows={stats.earliestAvg.map((r, i) => ({ name: r.userName, value: r.time, pct: 100 - i * 15 }))}
-                  color="var(--accent)"
-                  mono
+                  color="var(--accent)" mono
                 />
               </section>
               <section>
-                <h3 className={styles.sectionTitle}>Latest departure (avg)</h3>
+                <h3 className="font-mono text-[9px] font-medium tracking-[0.12em] uppercase text-muted mb-2">Latest departure (avg)</h3>
                 <Leaderboard
                   rows={stats.latestAvg.map((r, i) => ({ name: r.userName, value: r.time, pct: 100 - i * 15 }))}
-                  color="var(--accent2)"
-                  mono
+                  color="var(--accent2)" mono
                 />
               </section>
               <section>
-                <h3 className={styles.sectionTitle}>Avg hours / day present</h3>
+                <h3 className="font-mono text-[9px] font-medium tracking-[0.12em] uppercase text-muted mb-2">Avg hours / day present</h3>
                 <Leaderboard
                   rows={stats.avgHoursPerDay.map(r => ({ name: r.userName, value: `${r.hours}h`, pct: r.hours / (stats.avgHoursPerDay[0]?.hours || 1) * 100 }))}
                   color="var(--accent)"
@@ -93,63 +120,59 @@ export function StatsPage() {
               </section>
             </div>
 
-            {/* Row 3: Streaks + consistent day */}
-            <div className={styles.row2}>
+            <div className="grid grid-cols-2 gap-6">
               <section>
-                <h3 className={styles.sectionTitle}>Longest streak</h3>
+                <h3 className="font-mono text-[9px] font-medium tracking-[0.12em] uppercase text-muted mb-2">Longest streak</h3>
                 <Leaderboard
                   rows={stats.longestStreak.map(r => ({ name: r.userName, value: `${r.days} days`, pct: r.days / (stats.longestStreak[0]?.days || 1) * 100 }))}
                   color="var(--accent)"
                 />
               </section>
               <section>
-                <h3 className={styles.sectionTitle}>Most consistent day</h3>
-                <div className={styles.listCards}>
+                <h3 className="font-mono text-[9px] font-medium tracking-[0.12em] uppercase text-muted mb-2">Most consistent day</h3>
+                <div className="flex flex-col border border-border rounded-[2px] overflow-hidden">
                   {stats.mostConsistentDay.map(r => (
-                    <div key={r.userId} className={styles.listCard}>
+                    <div key={r.userId} className="flex items-center justify-between gap-2 bg-surface border-b border-border last:border-b-0 px-3 py-2.5 text-[12px]">
                       <span>{emoji(r.userName)} {r.userName}</span>
-                      <span className={`${styles.tag} mono`}>{r.weekday}</span>
+                      <span className="font-mono text-[9px] px-1.5 py-px rounded-[1px] bg-accent/12 text-accent border border-accent/30 tracking-[0.06em] uppercase">{r.weekday}</span>
                     </div>
                   ))}
                 </div>
               </section>
             </div>
 
-            {/* Peak office day */}
             <section>
-              <h3 className={styles.sectionTitle}>Peak office day</h3>
-              <div className={styles.peakCard}>
-                <span className={`${styles.peakDay} mono`}>{stats.peakOfficeDay.weekday}</span>
-                <span className={styles.peakSub}>avg {stats.peakOfficeDay.avgPeople} people</span>
+              <h3 className="font-mono text-[9px] font-medium tracking-[0.12em] uppercase text-muted mb-2">Peak office day</h3>
+              <div className="bg-surface border border-border border-l-2 border-l-accent rounded-[2px] px-4 py-3.5 flex items-baseline gap-3 max-w-[240px]">
+                <span className="font-mono text-[20px] font-medium text-accent">{stats.peakOfficeDay.weekday}</span>
+                <span className="font-mono text-[10px] text-muted">avg {stats.peakOfficeDay.avgPeople} people</span>
               </div>
             </section>
 
-            {/* Device uptime */}
             <section>
-              <h3 className={styles.sectionTitle}>Device uptime (% of working days)</h3>
-              <div className={styles.leaderboard}>
+              <h3 className="font-mono text-[9px] font-medium tracking-[0.12em] uppercase text-muted mb-2">Device uptime (% of working days)</h3>
+              <div className="flex flex-col border border-border rounded-[2px] overflow-hidden">
                 {stats.deviceUptime.map((r, i) => (
-                  <div key={r.deviceId} className={styles.lbRow}>
-                    <span className={`${styles.lbRank} ${rankClass(i)} mono`}>{i + 1}</span>
-                    <div className={styles.lbMid}>
-                      <div className={styles.lbName}>
-                        <span className={styles.lbSub}>{emoji(r.userName)} {r.userName}</span>
-                        <span className={`mono ${styles.lbDevice}`}>{r.deviceDesc}</span>
+                  <div key={r.deviceId} className="grid items-center gap-2.5 bg-surface px-3 py-2.5 border-b border-border last:border-b-0 hover:bg-surface2 transition-colors" style={{gridTemplateColumns:'22px 1fr 72px'}}>
+                    <span className={`font-mono text-[10px] ${rankColor(i)}`}>{i + 1}</span>
+                    <div className="min-w-0">
+                      <div className="font-medium text-[12px] text-text mb-1 whitespace-nowrap overflow-hidden text-ellipsis">
+                        <span>{emoji(r.userName)} {r.userName}</span>
+                        <span className="font-mono text-[9px] text-muted ml-1.5">{r.deviceDesc}</span>
                       </div>
-                      <div className={styles.lbBarWrap}>
-                        <div className={styles.lbBar} style={{ width: `${r.pct}%`, background: 'var(--accent2)' }} />
+                      <div className="bg-surface2 h-0.5 overflow-hidden">
+                        <div className="h-full transition-[width] duration-500" style={{ width: `${r.pct}%`, background: 'var(--accent2)' }} />
                       </div>
                     </div>
-                    <span className={`${styles.lbVal} mono`}>{r.pct}%</span>
+                    <span className="font-mono text-[10px] text-muted text-right">{r.pct}%</span>
                   </div>
                 ))}
               </div>
             </section>
 
-            {/* Multi-device days */}
             {stats.multiDeviceDays.length > 0 && (
               <section>
-                <h3 className={styles.sectionTitle}>Days with multiple devices</h3>
+                <h3 className="font-mono text-[9px] font-medium tracking-[0.12em] uppercase text-muted mb-2">Days with multiple devices</h3>
                 <Leaderboard
                   rows={stats.multiDeviceDays.map(r => ({ name: r.userName, value: `${r.days} days`, pct: r.days / (stats.multiDeviceDays[0]?.days || 1) * 100 }))}
                   color="var(--accent)"
@@ -160,36 +183,6 @@ export function StatsPage() {
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function rankClass(i: number) {
-  if (i === 0) return styles.gold;
-  if (i === 1) return styles.silver;
-  if (i === 2) return styles.bronze;
-  return '';
-}
-
-function Leaderboard({ rows, color, mono }: {
-  rows: Array<{ name: string; value: string; pct: number }>;
-  color: string;
-  mono?: boolean;
-}) {
-  return (
-    <div className={styles.leaderboard}>
-      {rows.map((r, i) => (
-        <div key={r.name} className={styles.lbRow}>
-          <span className={`${styles.lbRank} ${rankClass(i)} mono`}>{i + 1}</span>
-          <div className={styles.lbMid}>
-            <div className={styles.lbName}>{emoji(r.name)} {r.name}</div>
-            <div className={styles.lbBarWrap}>
-              <div className={styles.lbBar} style={{ width: `${r.pct}%`, background: color }} />
-            </div>
-          </div>
-          <span className={`${styles.lbVal} ${mono ? 'mono' : ''}`}>{r.value}</span>
-        </div>
-      ))}
     </div>
   );
 }

@@ -6,3 +6,5 @@ npm-debug.log
 dist/
 data/devices.db
 logs/
+.claude/
+skills-lock.json

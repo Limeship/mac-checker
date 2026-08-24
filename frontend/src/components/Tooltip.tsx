@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import styles from './Tooltip.module.css';
 
 export interface TooltipEntry {
   emoji?: string;
@@ -8,7 +7,7 @@ export interface TooltipEntry {
   from?: string;
   until?: string;
   duration?: string;
-  color?: string; // accent or accent2
+  color?: string;
 }
 
 interface Props {
@@ -33,15 +32,15 @@ export function Tooltip({ entries, x, y, visible }: Props) {
   return (
     <div
       ref={ref}
-      className={`${styles.tooltip} ${visible ? styles.visible : ''}`}
-      style={{ left: pos.left, top: pos.top }}
+      className={`fixed bg-surface2 border border-border rounded-[2px] px-3 py-2.5 text-[11px] pointer-events-none transition-opacity z-[200] min-w-[180px] max-w-[250px] ${visible ? 'opacity-100' : 'opacity-0'}`}
+      style={{ left: pos.left, top: pos.top, boxShadow: 'var(--shadow)' }}
     >
       {entries.map((e, i) => (
         <div key={i}>
-          {i > 0 && <div className={styles.divider} />}
-          <div className={styles.name}>{e.emoji} {e.name}</div>
+          {i > 0 && <div className="border-t border-border my-1.5" />}
+          <div className="font-medium mb-1.5 text-[12px] text-text">{e.emoji} {e.name}</div>
           {e.device && (
-            <div className={styles.row}>
+            <div className="flex justify-between gap-3 mt-0.5 font-mono text-[10px] tracking-[0.02em]">
               <span style={{ color: e.color ?? 'var(--accent)', fontFamily: 'var(--font-mono)', fontSize: 10 }}>
                 {e.device}
               </span>
@@ -49,10 +48,10 @@ export function Tooltip({ entries, x, y, visible }: Props) {
           )}
           {(e.from || e.until) && (
             <>
-              <div className={styles.dividerSoft} />
-              {e.from  && <div className={styles.row}><span>From</span><span>{e.from}</span></div>}
-              {e.until && <div className={styles.row}><span>Until</span><span>{e.until}</span></div>}
-              {e.duration && <div className={styles.row}><span>Duration</span><span>{e.duration}</span></div>}
+              <div className="border-t border-border my-1 opacity-40" />
+              {e.from     && <div className="flex justify-between gap-3 mt-0.5 text-muted font-mono text-[10px] tracking-[0.02em]"><span>From</span><span className="text-text font-mono text-[10px]">{e.from}</span></div>}
+              {e.until    && <div className="flex justify-between gap-3 mt-0.5 text-muted font-mono text-[10px] tracking-[0.02em]"><span>Until</span><span className="text-text font-mono text-[10px]">{e.until}</span></div>}
+              {e.duration && <div className="flex justify-between gap-3 mt-0.5 text-muted font-mono text-[10px] tracking-[0.02em]"><span>Duration</span><span className="text-text font-mono text-[10px]">{e.duration}</span></div>}
             </>
           )}
         </div>

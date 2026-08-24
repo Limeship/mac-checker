@@ -1,6 +1,5 @@
 import { Logo } from './Logo';
 import { themes, applyTheme, type ThemeId } from '../lib/themes';
-import styles from './Sidebar.module.css';
 
 type Page = 'calendar' | 'stats' | 'devices';
 
@@ -18,25 +17,17 @@ export function Sidebar({ currentPage, currentTheme, onPageChange, onThemeChange
   }
 
   return (
-    <nav className={styles.nav}>
-      <div className={styles.logo}><Logo /></div>
+    <nav className="w-14 bg-surface border-r border-border flex flex-col items-center py-4 gap-0.5 shrink-0">
+      <div className="mb-5"><Logo /></div>
 
-      <NavBtn
-        active={currentPage === 'calendar'}
-        title="Calendar"
-        onClick={() => onPageChange('calendar')}
-      >
+      <NavBtn active={currentPage === 'calendar'} title="Calendar" onClick={() => onPageChange('calendar')}>
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <rect x="1" y="3" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.3"/>
           <path d="M5 1v3M11 1v3M1 7h14" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
         </svg>
       </NavBtn>
 
-      <NavBtn
-        active={currentPage === 'stats'}
-        title="Statistics"
-        onClick={() => onPageChange('stats')}
-      >
+      <NavBtn active={currentPage === 'stats'} title="Statistics" onClick={() => onPageChange('stats')}>
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <rect x="1" y="9" width="3" height="6" rx="1" fill="currentColor"/>
           <rect x="6" y="5" width="3" height="10" rx="1" fill="currentColor"/>
@@ -44,11 +35,7 @@ export function Sidebar({ currentPage, currentTheme, onPageChange, onThemeChange
         </svg>
       </NavBtn>
 
-      <NavBtn
-        active={currentPage === 'devices'}
-        title="People & Devices"
-        onClick={() => onPageChange('devices')}
-      >
+      <NavBtn active={currentPage === 'devices'} title="People & Devices" onClick={() => onPageChange('devices')}>
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <circle cx="6" cy="5" r="3" stroke="currentColor" strokeWidth="1.3"/>
           <path d="M1 14c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
@@ -56,14 +43,13 @@ export function Sidebar({ currentPage, currentTheme, onPageChange, onThemeChange
         </svg>
       </NavBtn>
 
-      <div className={styles.spacer} />
+      <div className="flex-1" />
 
-      {/* Theme swatches */}
-      <div className={styles.themeGroup}>
+      <div className="flex flex-col items-center gap-1.5 pb-1">
         {themes.map(t => (
           <button
             key={t.id}
-            className={`${styles.swatch} ${currentTheme === t.id ? styles.swatchActive : ''}`}
+            className={`w-[22px] h-[22px] rounded-full border-2 cursor-pointer transition-transform hover:scale-[1.18] flex items-center justify-center overflow-hidden p-0 bg-transparent focus-visible:outline focus-visible:outline-1 focus-visible:outline-accent ${currentTheme === t.id ? 'border-text scale-[1.12]' : 'border-transparent'}`}
             title={t.label}
             onClick={() => handleTheme(t.id)}
           >
@@ -89,7 +75,7 @@ function NavBtn({ active, title, onClick, children }: {
 }) {
   return (
     <button
-      className={`${styles.navBtn} ${active ? styles.navBtnActive : ''}`}
+      className={`relative w-10 h-10 rounded-sm border-0 cursor-pointer flex items-center justify-center transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-accent ${active ? 'nav-btn-active' : 'bg-transparent text-muted hover:bg-surface2 hover:text-text'}`}
       title={title}
       onClick={onClick}
     >

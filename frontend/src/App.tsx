@@ -4,7 +4,6 @@ import { CalendarPage } from './pages/CalendarPage';
 import { StatsPage } from './pages/StatsPage';
 import { DevicesPage } from './pages/DevicesPage';
 import { applyTheme, loadSavedTheme, type ThemeId } from './lib/themes';
-import styles from './App.module.css';
 
 type Page = 'calendar' | 'stats' | 'devices';
 
@@ -15,14 +14,14 @@ export function App() {
   useEffect(() => { applyTheme(theme); }, []);
 
   return (
-    <div className={styles.layout}>
+    <div className="flex flex-1 h-screen overflow-hidden">
       <Sidebar
         currentPage={page}
         currentTheme={theme}
         onPageChange={setPage}
         onThemeChange={setTheme}
       />
-      <div className={styles.main}>
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {page === 'calendar' && <CalendarPage />}
         {page === 'stats'    && <StatsPage />}
         {page === 'devices'  && <DevicesPage />}

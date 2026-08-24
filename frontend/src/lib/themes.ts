@@ -1,4 +1,4 @@
-export type ThemeId = 'forest' | 'slate' | 'amber' | 'contrast' | 'soft';
+export type ThemeId = 'default' | 'forest' | 'amber' | 'contrast' | 'soft';
 
 export interface Theme {
   id: ThemeId;
@@ -9,6 +9,27 @@ export interface Theme {
 }
 
 export const themes: Theme[] = [
+  {
+    id: 'default',
+    label: 'Default',
+    swatchBg: '#0A0C10',
+    swatchAccent: '#38BDF8',
+    vars: {
+      '--bg':        '#0A0C10',
+      '--surface':   '#0F1318',
+      '--surface2':  '#161C24',
+      '--border':    '#1E2A36',
+      '--accent':    '#38BDF8',
+      '--accent-dim':'rgba(56,189,248,0.12)',
+      '--accent2':   '#818CF8',
+      '--accent2-dim':'rgba(129,140,248,0.11)',
+      '--text':      '#C8D4E0',
+      '--muted':     '#3D5060',
+      '--muted2':    '#1E2A36',
+      '--online':    '#34D399',
+      '--shadow':    '0 8px 32px rgba(0,0,0,0.6)',
+    },
+  },
   {
     id: 'forest',
     label: 'Forest',
@@ -27,27 +48,6 @@ export const themes: Theme[] = [
       '--muted':     '#6A7D6A',
       '--muted2':    '#3A4A3A',
       '--online':    '#4ADE80',
-      '--shadow':    '0 6px 24px rgba(0,0,0,0.5)',
-    },
-  },
-  {
-    id: 'slate',
-    label: 'Slate',
-    swatchBg: '#0C0E12',
-    swatchAccent: '#7DD3FC',
-    vars: {
-      '--bg':        '#0C0E12',
-      '--surface':   '#13161D',
-      '--surface2':  '#1A1F2B',
-      '--border':    '#252C3A',
-      '--accent':    '#7DD3FC',
-      '--accent-dim':'rgba(125,211,252,0.13)',
-      '--accent2':   '#A78BFA',
-      '--accent2-dim':'rgba(167,139,250,0.12)',
-      '--text':      '#E2E8F4',
-      '--muted':     '#607080',
-      '--muted2':    '#2E3848',
-      '--online':    '#34D399',
       '--shadow':    '0 6px 24px rgba(0,0,0,0.5)',
     },
   },
@@ -124,9 +124,9 @@ export function applyTheme(id: ThemeId) {
     root.style.setProperty(key, val);
   }
   root.setAttribute('data-theme', id === 'soft' ? 'light' : 'dark');
-  localStorage.setItem('lt-theme', id);
+  localStorage.setItem('lt-theme-v2', id);
 }
 
 export function loadSavedTheme(): ThemeId {
-  return (localStorage.getItem('lt-theme') as ThemeId) ?? 'forest';
+  return (localStorage.getItem('lt-theme-v2') as ThemeId) ?? 'default';
 }
