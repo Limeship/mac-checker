@@ -66,8 +66,8 @@ authed.get("/presence", async (c) => {
                         device.user.name AS userName,
                         device.description AS deviceDesc,
                         time::group(timestamp, 'day') AS day,
-                        time::format(time::min(timestamp), '%H:%M') AS firstTime,
-                        time::format(time::max(timestamp), '%H:%M') AS lastTime
+                        time::min(timestamp) AS firstTime,
+                        time::max(timestamp) AS lastTime
                     FROM device_logs
                     WHERE timestamp >= <datetime>$start
                       AND timestamp <= <datetime>$end
@@ -82,8 +82,8 @@ authed.get("/presence", async (c) => {
                         user.name AS userName,
                         'Robin' AS deviceDesc,
                         time::group(start, 'day') AS day,
-                        time::format(start, '%H:%M') AS firstTime,
-                        time::format(end, '%H:%M') AS lastTime
+                        start AS firstTime,
+                        end AS lastTime
                     FROM robin_logs
                     WHERE start >= <datetime>$start
                       AND start <= <datetime>$end
@@ -158,8 +158,8 @@ authed.get("/stats", async (c) => {
                         device.user.id AS userId,
                         device.user.name AS userName,
                         time::group(timestamp, 'day') AS day,
-                        time::format(time::min(timestamp), '%H:%M') AS firstTime,
-                        time::format(time::max(timestamp), '%H:%M') AS lastTime,
+                        time::min(timestamp) AS firstTime,
+                        time::max(timestamp) AS lastTime,
                         math::round(duration::secs(time::max(timestamp) - time::min(timestamp)) / 60) AS minutes
                     FROM device_logs
                     WHERE timestamp >= <datetime>$start

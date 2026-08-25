@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Sidebar } from './components/Sidebar';
+import { TopNav } from './components/TopNav';
 import { CalendarPage } from './pages/CalendarPage';
 import { StatsPage } from './pages/StatsPage';
 import { DevicesPage } from './pages/DevicesPage';
@@ -14,18 +14,18 @@ export function App() {
   useEffect(() => { applyTheme(theme); }, []);
 
   return (
-    <div className="flex flex-1 h-screen overflow-hidden">
-      <Sidebar
+    <div className="flex flex-col" style={{ minHeight: '100vh' }}>
+      <TopNav
         currentPage={page}
         currentTheme={theme}
         onPageChange={setPage}
         onThemeChange={setTheme}
       />
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {page === 'calendar' && <CalendarPage />}
         {page === 'stats'    && <StatsPage />}
         {page === 'devices'  && <DevicesPage />}
-      </div>
+      </main>
     </div>
   );
 }

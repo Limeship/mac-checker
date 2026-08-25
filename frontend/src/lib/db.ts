@@ -1,4 +1,5 @@
 import type { PresenceEntry, PersonWithDevices } from './types';
+import { toLocalTime } from './dateUtils';
 
 // All requests go to /api/* — proxied to the backend by server.ts
 const BASE = '/api';
@@ -22,7 +23,12 @@ export function emoji(name: string): string {
 
 export async function fetchPresence(start: Date, end: Date): Promise<PresenceEntry[]> {
   const params = new URLSearchParams({ start: start.toISOString(), end: end.toISOString() });
-  return get<PresenceEntry[]>(`/presence?${params}`);
+  const rows = await get<PresenceEntry[]>(`/presence?${params}`);
+  return rows.map(r => ({
+    ...r,
+    firstTime: toLocalTime(r.firstTime),
+    lastTime:  toLocalTime(r.lastTime),
+  }));
 }
 
 // ── PEOPLE & DEVICES ──
@@ -68,7 +74,12 @@ export interface StatsResult {
 export async function fetchStats(start: Date, end: Date): Promise<StatsResult> {
   const params = new URLSearchParams({ start: start.toISOString(), end: end.toISOString() });
   const raw = await get<{ presence: any[]; deviceRows: any[]; multiRows: any[] }>(`/stats?${params}`);
-  return computeStats(raw.presence, raw.deviceRows, raw.multiRows, start, end);
+  const presence = raw.presence.map(r => ({
+    ...r,
+    firstTime: toLocalTime(r.firstTime),
+    lastTime:  toLocalTime(r.lastTime),
+  }));
+  return computeStats(presence, raw.deviceRows, raw.multiRows, start, end);
 }
 
 function computeStats(

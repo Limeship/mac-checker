@@ -25,10 +25,21 @@ export function fmtMonthYear(d: Date): string {
   return d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
 }
 
+// Convert an ISO timestamp (or already-formatted HH:MM) to local HH:MM
+export function toLocalTime(value?: string): string {
+  if (!value) return '';
+  // Already HH:MM — pass through
+  if (/^\d{2}:\d{2}$/.test(value)) return value;
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return '';
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
 export function minsToHours(from?: string, to?: string): string {
-  if (!from || !to) return '0h';
-  const [fh, fm] = from.split(':').map(Number);
-  const [th, tm] = to.split(':').map(Number);
+  const f = toLocalTime(from), t = toLocalTime(to);
+  if (!f || !t) return '0h';
+  const [fh, fm] = f.split(':').map(Number);
+  const [th, tm] = t.split(':').map(Number);
   if (isNaN(fh) || isNaN(fm) || isNaN(th) || isNaN(tm)) return '0h';
   const mins = Math.max(0, (th * 60 + tm) - (fh * 60 + fm));
   const h = Math.floor(mins / 60), m = mins % 60;
