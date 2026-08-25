@@ -166,7 +166,7 @@ authed.get("/stats", async (c) => {
                       AND timestamp <= <datetime>$end
                       AND device.ignored != true
                       AND device.user != NONE
-                    GROUP BY device.user.id, day
+                    GROUP BY device.user.id, device.user.name, day
                     ORDER BY device.user.id, day
                 `, { start, end }),
 
@@ -182,7 +182,7 @@ authed.get("/stats", async (c) => {
                       AND timestamp <= <datetime>$end
                       AND device.ignored != true
                       AND device.user != NONE
-                    GROUP BY device.id
+                    GROUP BY device.id, device.description, device.user.name
                 `, { start, end }),
 
                 // Multi-device days
@@ -197,7 +197,7 @@ authed.get("/stats", async (c) => {
                       AND timestamp <= <datetime>$end
                       AND device.ignored != true
                       AND device.user != NONE
-                    GROUP BY device.user.id, day
+                    GROUP BY device.user.id, device.user.name, day
                 `, { start, end }),
             ]);
 
