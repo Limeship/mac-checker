@@ -198,13 +198,12 @@ authed.get("/stats", async (c) => {
                       AND device.ignored != true
                       AND device.user != NONE
                     GROUP BY device.user.id, day
-                    HAVING deviceCount > 1
                 `, { start, end }),
             ]);
 
             const presence = presenceRes[0] ?? [];
             const deviceRows = deviceRes[0] ?? [];
-            const multiRows = multiRes[0] ?? [];
+            const multiRows = (multiRes[0] ?? []).filter((r: any) => (r.deviceCount ?? 0) > 1);
             logger.info(`📊 /api/stats results: ${presence.length} presence rows, ${deviceRows.length} device uptime rows, ${multiRows.length} multi-device rows`);
 
             return {
