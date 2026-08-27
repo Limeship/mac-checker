@@ -10,13 +10,31 @@ async function get<T>(path: string): Promise<T> {
   return res.json();
 }
 
-// Emoji overrides — hardcoded per person name. Add entries here to customise.
 export const EMOJI_MAP: Record<string, string> = {
-  // 'Alice K.': '🧑‍💻',
+  'Chris':     '🎸',
+  'Thomas':    '🏍️',
+  'Joyce':     '🐻',
+  'Christoph': '🦊',
+  'Take':      '🌊',
+  'Rupert':    '🧙',
+  'Dominik':   '🦅',
+  'Robo':      '🤖',
+  'Dave':      '🍺',
 };
 
+const EMOJI_POOL = [
+  '🦋','🐙','🦜','🐺','🦝','🦄','🦩','🐬','🦔','🐧',
+  '🦦','🐨','🦥','🐮','🦁','🐸','🐼','🐯','🦞','🦚',
+];
+
+function nameHash(name: string): number {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (Math.imul(31, h) + name.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
 export function emoji(name: string): string {
-  return EMOJI_MAP[name] ?? '👤';
+  return EMOJI_MAP[name] ?? EMOJI_POOL[nameHash(name) % EMOJI_POOL.length];
 }
 
 // ── CALENDAR ──
@@ -119,7 +137,6 @@ function computeStats(
     for (let i = 1; i < sortedDays.length; i++) {
       const prev = new Date(sortedDays[i - 1]);
       const curr = new Date(sortedDays[i]);
-      // Advance prev by calendar days, skipping weekends, to find the next working day
       const next = new Date(prev);
       do { next.setDate(next.getDate() + 1); } while (next.getDay() === 0 || next.getDay() === 6);
       if (curr.toDateString() === next.toDateString()) { streak++; maxStreak = Math.max(maxStreak, streak); }
