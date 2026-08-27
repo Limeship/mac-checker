@@ -189,7 +189,7 @@ authed.get("/stats", async (c) => {
                         device.description AS deviceDesc,
                         device.user.name AS userName,
                         array::len(array::distinct(array::group(time::group(timestamp, 'day')))) AS days
-                    FROM device_logs
+                    FROM device_logs 
                     WHERE timestamp >= <datetime>$start
                       AND timestamp <= <datetime>$end
                       AND device.ignored != true
