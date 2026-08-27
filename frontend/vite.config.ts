@@ -29,6 +29,7 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false,
           headers: proxyHeaders,
+          rewrite: (path) => path.replace(/^\/api/, ''),
         },
       },
     },

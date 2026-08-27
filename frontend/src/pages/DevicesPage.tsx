@@ -29,79 +29,146 @@ export function DevicesPage() {
   return (
     <div className="flex flex-col flex-1 overflow-hidden min-h-0">
       <div className="flex-1 overflow-auto">
-        <div className="container py-6">
+        <div className="container" style={{ paddingTop: 32, paddingBottom: 32 }}>
           {loading ? (
             <div className="py-16 text-center font-mono text-sm" style={{ color: 'var(--muted)' }}>Loading…</div>
           ) : (
-            <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
-              {people.map(person => (
-                <div key={person.id} className="card overflow-hidden flex flex-col">
-                  {/* Person header */}
-                  <div className="flex items-center gap-3 px-4 py-3 border-b" style={{ borderColor: 'var(--border)', background: 'var(--surface2)' }}>
-                    <span className="text-xl leading-none">{person.emoji}</span>
-                    <span className="font-semibold text-[14px]" style={{ color: 'var(--text)' }}>{person.name}</span>
-                    {onlineCount(person) > 0 && (
-                      <span
-                        className="ml-auto flex items-center gap-1.5 font-mono text-[10px] font-medium px-2 py-0.5 rounded-full uppercase tracking-wider"
-                        style={{ background: 'rgba(63,185,80,0.12)', color: 'var(--online)', border: '1px solid rgba(63,185,80,0.25)' }}
+            <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 20 }}>
+              {people.map(person => {
+                const online = onlineCount(person);
+                return (
+                  <div key={person.id} className="card overflow-hidden flex flex-col">
+                    {/* Person header */}
+                    <div
+                      className="flex items-center"
+                      style={{
+                        gap: 12,
+                        padding: '16px 20px',
+                        borderBottom: '1px solid var(--border)',
+                        background: 'var(--surface2)',
+                      }}
+                    >
+                      <div
+                        className="flex items-center justify-center shrink-0 text-xl leading-none"
+                        style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--muted2)' }}
                       >
-                        <span className="online-dot" style={{ width: 6, height: 6 }} />
-                        {onlineCount(person)} online
-                      </span>
+                        {person.emoji}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-[15px]" style={{ color: 'var(--text)' }}>{person.name}</div>
+                        <div className="font-mono text-[11px]" style={{ color: 'var(--muted)', marginTop: 2 }}>
+                          {person.devices.length} device{person.devices.length !== 1 ? 's' : ''}
+                        </div>
+                      </div>
+                      {online > 0 && (
+                        <span
+                          className="flex items-center font-mono text-[10px] font-medium uppercase tracking-wider shrink-0"
+                          style={{ gap: 6, padding: '4px 10px', borderRadius: 999, background: 'rgba(63,185,80,0.12)', color: 'var(--online)', border: '1px solid rgba(63,185,80,0.25)' }}
+                        >
+                          <span className="online-dot" style={{ width: 6, height: 6 }} />
+                          {online} online
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Device rows */}
+                    {person.devices.length === 0 ? (
+                      <div className="font-mono text-[12px]" style={{ padding: '16px 20px', color: 'var(--muted)' }}>No devices</div>
+                    ) : (
+                      <div className="flex flex-col">
+                        {person.devices.map((device, i) => (
+                          <div
+                            key={device.id}
+                            className="flex items-center transition-colors"
+                            style={{
+                              gap: 12,
+                              padding: '12px 20px',
+                              borderTop: i > 0 ? '1px solid var(--border)' : undefined,
+                              borderLeft: device.online ? '3px solid var(--online)' : '3px solid transparent',
+                              background: 'var(--surface)',
+                            }}
+                            onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface2)')}
+                            onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface)')}
+                          >
+                            {/* Device icon */}
+                            <div
+                              className="flex items-center justify-center shrink-0"
+                              style={{
+                                width: 32, height: 32, borderRadius: 8,
+                                background: device.online ? 'rgba(63,185,80,0.10)' : 'var(--muted2)',
+                              }}
+                            >
+                              <DeviceTypeIcon desc={device.description} online={device.online} />
+                            </div>
+
+                            {/* Name + MAC */}
+                            <div className="flex-1 min-w-0">
+                              <div className="text-[13px] font-medium truncate" style={{ color: 'var(--text)' }}>
+                                {device.description}
+                              </div>
+                              <div className="font-mono text-[10px]" style={{ color: 'var(--muted)', marginTop: 2 }}>
+                                {device.mac}
+                              </div>
+                            </div>
+
+                            {/* Status + last seen */}
+                            <div className="flex flex-col items-end shrink-0" style={{ gap: 4 }}>
+                              {device.online ? (
+                                <span
+                                  className="flex items-center font-mono text-[10px] font-medium uppercase tracking-wider"
+                                  style={{ gap: 5, padding: '3px 8px', borderRadius: 999, background: 'rgba(63,185,80,0.12)', color: 'var(--online)', border: '1px solid rgba(63,185,80,0.25)' }}
+                                >
+                                  <span className="online-dot" style={{ width: 5, height: 5 }} />
+                                  online
+                                </span>
+                              ) : (
+                                <span
+                                  className="font-mono text-[10px] uppercase tracking-wider"
+                                  style={{ padding: '3px 8px', borderRadius: 999, background: 'var(--muted2)', color: 'var(--muted)', border: '1px solid var(--border)' }}
+                                >
+                                  offline
+                                </span>
+                              )}
+                              <span className="font-mono text-[10px]" style={{ color: 'var(--muted)' }}>
+                                {device.online ? 'active now' : fmtLastSeen(device.lastSeen)}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
-
-                  {/* Device rows */}
-                  {person.devices.length === 0 ? (
-                    <div className="px-4 py-4 font-mono text-[12px]" style={{ color: 'var(--muted)' }}>No devices</div>
-                  ) : (
-                    <div className="flex flex-col divide-y" style={{ borderColor: 'var(--border)' }}>
-                      {person.devices.map(device => (
-                        <div
-                          key={device.id}
-                          className="flex items-center justify-between gap-3 px-4 py-3 transition-colors"
-                          style={{
-                            background: 'var(--surface)',
-                            borderLeft: device.online ? '3px solid var(--online)' : '3px solid transparent',
-                          }}
-                          onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface2)')}
-                          onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface)')}
-                        >
-                          <div className="flex flex-col gap-0.5 min-w-0">
-                            <span className="text-[13px] font-medium truncate" style={{ color: 'var(--text)' }}>{device.description}</span>
-                            <span className="font-mono text-[10px]" style={{ color: 'var(--muted)' }}>{device.mac}</span>
-                          </div>
-                          <div className="flex flex-col items-end gap-0.5 shrink-0">
-                            {device.online ? (
-                              <span
-                                className="flex items-center gap-1.5 font-mono text-[10px] font-medium px-2 py-0.5 rounded-full uppercase tracking-wider"
-                                style={{ background: 'rgba(63,185,80,0.12)', color: 'var(--online)', border: '1px solid rgba(63,185,80,0.25)' }}
-                              >
-                                <span className="online-dot" style={{ width: 5, height: 5 }} />
-                                online
-                              </span>
-                            ) : (
-                              <span
-                                className="font-mono text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider"
-                                style={{ background: 'var(--muted2)', color: 'var(--muted)', border: '1px solid var(--border)' }}
-                              >
-                                offline
-                              </span>
-                            )}
-                            <span className="font-mono text-[10px]" style={{ color: 'var(--muted)' }}>
-                              {device.online ? 'active now' : fmtLastSeen(device.lastSeen)}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
       </div>
     </div>
+  );
+}
+
+function DeviceTypeIcon({ desc, online }: { desc: string; online: boolean }) {
+  const lower = desc.toLowerCase();
+  const color = online ? 'var(--online)' : 'var(--muted)';
+  if (lower.includes('iphone') || lower.includes('handy') || lower.includes('phone') || lower.includes('pixel')) {
+    return (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
+      </svg>
+    );
+  }
+  if (lower.includes('lenovo') || lower.includes('wlan') || lower.includes('laptop')) {
+    return (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="4" width="20" height="14" rx="2"/><path d="M2 20h20"/>
+      </svg>
+    );
+  }
+  // default: desktop/mac
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
+    </svg>
   );
 }

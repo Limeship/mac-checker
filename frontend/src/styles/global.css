@@ -76,6 +76,17 @@ body {
 }
 
 /* Section header label */
+button.section-header {
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid var(--border) !important;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+button.section-header:hover {
+  background: var(--surface2);
+  border-color: var(--muted) !important;
+  color: var(--text);
+}
 .section-header {
   font-family: var(--font-mono);
   font-size: 10px;

@@ -80,7 +80,9 @@ export interface StatsResult {
   daysInOffice:      Array<{ userId: string; userName: string; days: number }>;
   hoursOnline:       Array<{ userId: string; userName: string; hours: number }>;
   earliestAvg:       Array<{ userId: string; userName: string; time: string }>;
+  earliestEver:      Array<{ userId: string; userName: string; time: string }>;
   latestAvg:         Array<{ userId: string; userName: string; time: string }>;
+  latestEver:        Array<{ userId: string; userName: string; time: string }>;
   avgHoursPerDay:    Array<{ userId: string; userName: string; hours: number }>;
   longestStreak:     Array<{ userId: string; userName: string; days: number }>;
   mostConsistentDay: Array<{ userId: string; userName: string; weekday: string }>;
@@ -117,7 +119,9 @@ function computeStats(
   const daysInOffice:      StatsResult['daysInOffice']      = [];
   const hoursOnline:       StatsResult['hoursOnline']       = [];
   const earliestAvg:       StatsResult['earliestAvg']       = [];
+  const earliestEver:      StatsResult['earliestEver']      = [];
   const latestAvg:         StatsResult['latestAvg']         = [];
+  const latestEver:        StatsResult['latestEver']        = [];
   const avgHoursPerDay:    StatsResult['avgHoursPerDay']    = [];
   const longestStreak:     StatsResult['longestStreak']     = [];
   const mostConsistentDay: StatsResult['mostConsistentDay'] = [];
@@ -131,6 +135,8 @@ function computeStats(
     const latestMins   = userRows.map((r: any) => { const [h,m] = r.lastTime.split(':').map(Number);  return h*60+m; });
     const avgEarliest  = Math.round(earliestMins.reduce((a: number, b: number) => a+b, 0) / earliestMins.length);
     const avgLatest    = Math.round(latestMins.reduce((a: number, b: number) => a+b, 0) / latestMins.length);
+    const minEarliest  = Math.min(...earliestMins);
+    const maxLatest    = Math.max(...latestMins);
 
     const sortedDays = userRows.map((r: any) => r.day).sort();
     let streak = 1, maxStreak = 1;
@@ -154,7 +160,9 @@ function computeStats(
     daysInOffice.push({ userId, userName, days });
     hoursOnline.push({ userId, userName, hours: Math.round(totalMins/60*10)/10 });
     earliestAvg.push({ userId, userName, time: minsToTime(avgEarliest) });
+    earliestEver.push({ userId, userName, time: minsToTime(minEarliest) });
     latestAvg.push({ userId, userName, time: minsToTime(avgLatest) });
+    latestEver.push({ userId, userName, time: minsToTime(maxLatest) });
     avgHoursPerDay.push({ userId, userName, hours: Math.round(totalMins/days/60*10)/10 });
     longestStreak.push({ userId, userName, days: maxStreak });
     mostConsistentDay.push({ userId, userName, weekday: bestDay });
@@ -163,7 +171,9 @@ function computeStats(
   daysInOffice.sort((a, b) => b.days - a.days);
   hoursOnline.sort((a, b) => b.hours - a.hours);
   earliestAvg.sort((a, b) => a.time.localeCompare(b.time));
+  earliestEver.sort((a, b) => a.time.localeCompare(b.time));
   latestAvg.sort((a, b) => b.time.localeCompare(a.time));
+  latestEver.sort((a, b) => b.time.localeCompare(a.time));
   avgHoursPerDay.sort((a, b) => b.hours - a.hours);
   longestStreak.sort((a, b) => b.days - a.days);
   mostConsistentDay.sort((a, b) => String(a.userName).localeCompare(String(b.userName)));
@@ -194,7 +204,7 @@ function computeStats(
   const weekdays        = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
   const peakOfficeDay   = { weekday: weekdays[peakIdx] ?? 'Monday', avgPeople: Math.round(avgPerWeekday[peakIdx]*10)/10 };
 
-  return { daysInOffice, hoursOnline, earliestAvg, latestAvg, avgHoursPerDay, longestStreak, mostConsistentDay, deviceUptime, multiDeviceDays, peakOfficeDay };
+  return { daysInOffice, hoursOnline, earliestAvg, earliestEver, latestAvg, latestEver, avgHoursPerDay, longestStreak, mostConsistentDay, deviceUptime, multiDeviceDays, peakOfficeDay };
 }
 
 function minsToTime(mins: number): string {

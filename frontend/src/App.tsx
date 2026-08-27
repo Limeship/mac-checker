@@ -5,6 +5,7 @@ import { CalendarPage } from './pages/CalendarPage';
 import { StatsPage } from './pages/StatsPage';
 import { DevicesPage } from './pages/DevicesPage';
 import { applyTheme, loadSavedTheme, type ThemeId } from './lib/themes';
+import { offsetToWeekParam } from './lib/dateUtils';
 
 type Page = 'calendar' | 'stats' | 'devices';
 
@@ -20,7 +21,8 @@ function AppInner() {
     location.pathname.startsWith('/devices') ? 'devices' : 'calendar';
 
   function handlePageChange(p: Page) {
-    navigate(p === 'calendar' ? '/' : `/${p}`);
+    if (p === 'calendar') navigate(`/calendar/week/${offsetToWeekParam(0)}`);
+    else navigate(`/${p}`);
   }
 
   return (
@@ -33,10 +35,13 @@ function AppInner() {
       />
       <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
         <Routes>
-          <Route path="/"        element={<CalendarPage />} />
-          <Route path="/stats"   element={<StatsPage />} />
-          <Route path="/devices" element={<DevicesPage />} />
-          <Route path="*"        element={<Navigate to="/" replace />} />
+          <Route path="/"                      element={<Navigate to={`/calendar/week/${offsetToWeekParam(0)}`} replace />} />
+          <Route path="/calendar/week/:param"  element={<CalendarPage />} />
+          <Route path="/calendar/month/:param" element={<CalendarPage />} />
+          <Route path="/calendar"              element={<Navigate to={`/calendar/week/${offsetToWeekParam(0)}`} replace />} />
+          <Route path="/stats"                 element={<StatsPage />} />
+          <Route path="/devices"               element={<DevicesPage />} />
+          <Route path="*"                      element={<Navigate to={`/calendar/week/${offsetToWeekParam(0)}`} replace />} />
         </Routes>
       </main>
     </div>

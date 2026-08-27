@@ -58,6 +58,53 @@ export function signalStrength(from?: string, to?: string): number {
   return 4;
 }
 
+// Returns ISO week number for a date (Mon-based)
+export function isoWeek(d: Date): { year: number; week: number } {
+  const tmp = new Date(d);
+  tmp.setHours(0, 0, 0, 0);
+  tmp.setDate(tmp.getDate() + 3 - ((tmp.getDay() + 6) % 7));
+  const jan4 = new Date(tmp.getFullYear(), 0, 4);
+  const week = 1 + Math.round(((tmp.getTime() - jan4.getTime()) / 86400000 - 3 + ((jan4.getDay() + 6) % 7)) / 7);
+  return { year: tmp.getFullYear(), week };
+}
+
+// Format offset as "2026-W34" or "2026-08"
+export function offsetToWeekParam(offset: number): string {
+  const monday = getMondayOf(offset);
+  const { year, week } = isoWeek(monday);
+  return `${year}-W${String(week).padStart(2, '0')}`;
+}
+
+export function offsetToMonthParam(monthOffset: number): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + monthOffset;
+  const date = new Date(year, month, 1);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+// Parse "2026-W34" back to a week offset relative to today
+export function weekParamToOffset(param: string): number {
+  const m = param.match(/^(\d{4})-W(\d{1,2})$/);
+  if (!m) return 0;
+  const year = parseInt(m[1]), week = parseInt(m[2]);
+  // Find Monday of that ISO week
+  const jan4 = new Date(year, 0, 4);
+  const monday = new Date(jan4);
+  monday.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7) + (week - 1) * 7);
+  const todayMonday = getMondayOf(0);
+  return Math.round((monday.getTime() - todayMonday.getTime()) / (7 * 86400000));
+}
+
+// Parse "2026-08" back to a month offset relative to today
+export function monthParamToOffset(param: string): number {
+  const m = param.match(/^(\d{4})-(\d{2})$/);
+  if (!m) return 0;
+  const year = parseInt(m[1]), month = parseInt(m[2]) - 1;
+  const now = new Date();
+  return (year - now.getFullYear()) * 12 + (month - now.getMonth());
+}
+
 export function toISODateStr(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -73,9 +120,10 @@ export function weekRangeForOffset(offset: number): { start: Date; end: Date } {
   return { start: monday, end: sunday };
 }
 
-export function monthRangeForOffset(offset: number): { start: Date; end: Date; year: number; month: number } {
-  const monday = getMondayOf(offset);
-  const year = monday.getFullYear(), month = monday.getMonth();
+export function monthRangeForOffset(monthOffset: number): { start: Date; end: Date; year: number; month: number } {
+  const now = new Date();
+  const date = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
+  const year = date.getFullYear(), month = date.getMonth();
   const start = new Date(year, month, 1);
   const end = new Date(year, month + 1, 0, 23, 59, 59, 999);
   return { start, end, year, month };

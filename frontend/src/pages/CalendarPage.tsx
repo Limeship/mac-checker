@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { fetchPresence, emoji } from '../lib/db';
 import type { PresenceEntry } from '../lib/types';
 import {
   getMondayOf, isToday, fmtShort, fmtWeekday, fmtMonthYear,
   minsToHours, weekRangeForOffset, monthRangeForOffset,
-  toISODateStr,
+  toISODateStr, offsetToWeekParam, offsetToMonthParam,
+  weekParamToOffset, monthParamToOffset,
 } from '../lib/dateUtils';
 
 type View = 'week' | 'month';
@@ -39,8 +41,25 @@ function hoursRounded(from?: string, to?: string): string {
 }
 
 export function CalendarPage() {
-  const [view, setView]             = useState<View>('week');
-  const [offset, setOffset]         = useState(0);
+  const { param } = useParams<{ param: string }>();
+  const navigate   = useNavigate();
+  const location   = useLocation();
+  const isMonthRoute = location.pathname.startsWith('/calendar/month');
+  const view: View   = isMonthRoute ? 'month' : 'week';
+  const offset       = view === 'week'
+    ? weekParamToOffset(param ?? offsetToWeekParam(0))
+    : monthParamToOffset(param ?? offsetToMonthParam(0));
+
+  function setView(v: View) {
+    if (v === 'week')  navigate(`/calendar/week/${offsetToWeekParam(0)}`);
+    else               navigate(`/calendar/month/${offsetToMonthParam(0)}`);
+  }
+
+  function setOffset(fn: (o: number) => number) {
+    const next = fn(offset);
+    if (view === 'week')  navigate(`/calendar/week/${offsetToWeekParam(next)}`);
+    else                  navigate(`/calendar/month/${offsetToMonthParam(next)}`);
+  }
   const [entries, setEntries]       = useState<PresenceEntry[]>([]);
   const [loading, setLoading]       = useState(true);
   const [filter, setFilter]         = useState<FilterState>({ people: new Set(), devices: new Set() });
@@ -74,7 +93,11 @@ export function CalendarPage() {
     setFilter(prev => {
       const people = new Set(prev.people);
       if (people.has(name)) people.delete(name); else people.add(name);
-      return { ...prev, people };
+      // Sync devices: keep only devices belonging to at least one selected person
+      const devices = new Set(
+        allDevices.filter(d => entries.some(e => people.has(e.userName) && e.deviceDesc === d))
+      );
+      return { people, devices };
     });
   }
 
@@ -128,13 +151,13 @@ export function CalendarPage() {
                   const days = Array.from({ length: 7 }, (_, i) => { const d = new Date(m); d.setDate(m.getDate() + i); return d; });
                   return `${fmtShort(days[0])} – ${fmtShort(days[6])}`;
                 })()
-              : fmtMonthYear(getMondayOf(offset))
+              : fmtMonthYear(new Date(new Date().getFullYear(), new Date().getMonth() + offset, 1))
             }
           </span>
           <button className="btn-icon" onClick={() => setOffset(o => o + 1)} aria-label="Next">
             <ChevronRight />
           </button>
-          <button className="btn" onClick={() => setOffset(0)}>Today</button>
+          <button className="btn" onClick={() => setOffset(() => 0)}>Today</button>
           <div className="flex-1" />
           <div className="flex gap-1">
             <button className={`btn ${view === 'week' ? 'active' : ''}`} onClick={() => setView('week')}>Week</button>
@@ -145,8 +168,26 @@ export function CalendarPage() {
 
       {/* Filter chips */}
       <div className="shrink-0 border-b" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
-        <div className="container flex flex-wrap gap-1.5 items-center min-h-[44px] py-2">
-          <span className="section-header mr-1">People</span>
+        <div className="container flex flex-wrap items-center" style={{ gap: 6, minHeight: 44, paddingTop: 10, paddingBottom: 10 }}>
+          <button
+            className="section-header"
+            style={{ cursor: 'pointer', marginRight: 4 }}
+            onClick={() => {
+              const allSelected = allPeople.every(n => filter.people.has(n));
+              if (allSelected) {
+                setFilter({ people: new Set(), devices: new Set() });
+              } else {
+                const newPeople = new Set(allPeople);
+                const newDevices = new Set(
+                  allDevices.filter(d => entries.some(e => newPeople.has(e.userName) && e.deviceDesc === d))
+                );
+                setFilter({ people: newPeople, devices: newDevices });
+              }
+            }}
+            title={allPeople.every(n => filter.people.has(n)) ? 'Deselect all people' : 'Select all people'}
+          >
+            People
+          </button>
           {allPeople.map(name => (
             <button key={name} className={`chip ${filter.people.has(name) ? 'active' : ''}`} onClick={() => togglePerson(name)}>
               {emoji(name)} {name}
@@ -154,8 +195,18 @@ export function CalendarPage() {
           ))}
           {allDevices.length > 0 && (
             <>
-              <div className="w-px h-4 mx-1" style={{ background: 'var(--border)' }} />
-              <span className="section-header mr-1">Devices</span>
+              <div style={{ width: 1, height: 16, margin: '0 4px', background: 'var(--border)' }} />
+              <button
+                className="section-header"
+                style={{ cursor: 'pointer', marginRight: 4 }}
+                onClick={() => {
+                  const allSelected = allDevices.every(d => filter.devices.has(d));
+                  setFilter(prev => ({ ...prev, devices: allSelected ? new Set() : new Set(allDevices) }));
+                }}
+                title={allDevices.every(d => filter.devices.has(d)) ? 'Deselect all devices' : 'Select all devices'}
+              >
+                Devices
+              </button>
               {allDevices.map(d => (
                 <button key={d} className={`chip ${filter.devices.has(d) ? 'active' : ''}`} onClick={() => toggleDevice(d)}>
                   {d}
@@ -173,7 +224,7 @@ export function CalendarPage() {
             Loading…
           </div>
         ) : (
-          <div className="container py-5">
+          <div className="container" style={{ paddingTop: 24, paddingBottom: 24 }}>
             {view === 'week' ? (
               <WeekGrid
                 offset={offset}
@@ -359,7 +410,7 @@ function MonthGrid({ offset, entries, onHover, onMove, onLeave }: {
   if (startOffset < 0) startOffset = 6;
 
   const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  const MAX_DOTS = 4;
+  const MAX_CHIPS = 4;
 
   return (
     <div className="card overflow-hidden" style={{ minWidth: 560 }}>
@@ -397,9 +448,13 @@ function MonthGrid({ offset, entries, onHover, onMove, onLeave }: {
           const todayDay = isToday(date);
           const colIdx = (startOffset + i) % 7;
 
-          const devicePeople = [...new Set(dayEntries.filter(e => e.type === 'device').map(e => e.userName))];
-          const robinPeople  = [...new Set(dayEntries.filter(e => e.type === 'robin').map(e => e.userName))];
-          const allPresent   = [...new Set(dayEntries.map(e => e.userName))];
+          const allPresent = [...new Set(dayEntries.map(e => e.userName))];
+
+          // Per-person: pick dominant entry type (device > robin) for color
+          const personChips = allPresent.map(name => {
+            const hasDevice = dayEntries.some(e => e.userName === name && e.type === 'device');
+            return { name, isRobin: !hasDevice };
+          });
 
           const tooltipEntries = allPresent.flatMap(name => {
             const personEntries = dayEntries.filter(e => e.userName === name);
@@ -414,16 +469,16 @@ function MonthGrid({ offset, entries, onHover, onMove, onLeave }: {
             }));
           });
 
-          const dotsDevice = devicePeople.slice(0, MAX_DOTS);
-          const dotsRobin  = robinPeople.slice(0, Math.max(0, MAX_DOTS - dotsDevice.length));
-          const overflow   = Math.max(0, allPresent.length - MAX_DOTS);
+          const visibleChips = personChips.slice(0, MAX_CHIPS);
+          const overflow = Math.max(0, personChips.length - MAX_CHIPS);
 
           return (
             <div
               key={day}
-              className="p-2 cursor-default transition-colors"
+              className="cursor-default transition-colors"
               style={{
-                minHeight: 80,
+                minHeight: 90,
+                padding: '8px 6px',
                 borderRight: colIdx < 6 ? '1px solid var(--border)' : undefined,
                 borderBottom: '1px solid var(--border)',
                 background: isWknd ? 'rgba(0,0,0,0.12)' : undefined,
@@ -433,24 +488,43 @@ function MonthGrid({ offset, entries, onHover, onMove, onLeave }: {
               onMouseMove={tooltipEntries.length ? onMove : undefined}
               onMouseLeave={tooltipEntries.length ? onLeave : undefined}
             >
+              {/* Day number */}
               <div
-                className="font-mono text-[11px] font-medium mb-1.5 w-6 h-6 flex items-center justify-center rounded-full"
+                className="font-mono text-[11px] font-medium flex items-center justify-center"
                 style={{
+                  width: 22, height: 22, borderRadius: '50%', marginBottom: 6,
                   color: todayDay ? 'var(--bg)' : 'var(--muted)',
                   background: todayDay ? 'var(--accent)' : undefined,
                 }}
               >
                 {day}
               </div>
-              <div className="flex flex-wrap gap-1">
-                {dotsDevice.map(name => (
-                  <div key={`d-${name}`} className="w-2 h-2 rounded-sm" style={{ background: 'var(--accent)' }} title={name} />
-                ))}
-                {dotsRobin.map(name => (
-                  <div key={`r-${name}`} className="w-2 h-2 rounded-sm" style={{ background: 'var(--accent2)' }} title={`${name} (Robin)`} />
+              {/* Person chips */}
+              <div className="flex flex-col" style={{ gap: 3 }}>
+                {visibleChips.map(({ name, isRobin }) => (
+                  <div
+                    key={name}
+                    className="flex items-center"
+                    style={{
+                      gap: 4,
+                      padding: '2px 5px',
+                      borderRadius: 4,
+                      background: isRobin ? 'var(--accent2-dim)' : 'var(--accent-dim)',
+                      borderLeft: `2px solid ${isRobin ? 'var(--accent2)' : 'var(--accent)'}`,
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <span style={{ fontSize: 11, lineHeight: 1, flexShrink: 0 }}>{emoji(name)}</span>
+                    <span
+                      className="font-mono font-medium truncate"
+                      style={{ fontSize: 10, color: isRobin ? 'var(--accent2)' : 'var(--accent)' }}
+                    >
+                      {name}
+                    </span>
+                  </div>
                 ))}
                 {overflow > 0 && (
-                  <span className="font-mono text-[9px]" style={{ color: 'var(--muted)' }}>+{overflow}</span>
+                  <span className="font-mono text-[9px]" style={{ color: 'var(--muted)', paddingLeft: 5 }}>+{overflow} more</span>
                 )}
               </div>
             </div>

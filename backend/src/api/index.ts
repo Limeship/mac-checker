@@ -113,25 +113,37 @@ authed.get("/people", async (c) => {
     try {
         const result = await database.withDb(async (db) => {
             const cutoff = new Date(Date.now() - 20 * 60 * 1000).toISOString();
-            const [rows] = await db.query<[any[]]>(`
-                SELECT
-                    id,
-                    name,
-                    (
-                        SELECT
-                            id,
-                            description,
-                            mac,
-                            time::max(<-device_logs.timestamp) AS lastSeen,
-                            count(<-device_logs[WHERE timestamp >= <datetime>$cutoff]) > 0 AS online
-                        FROM devices
-                        WHERE user = $parent.id
-                          AND ignored != true
-                    ) AS devices
-                FROM users
-                ORDER BY name
-            `, { cutoff });
-            const list = rows ?? [];
+
+            const [usersRes, deviceRowsRes, recentLogsRes, lastSeenRowsRes] = await Promise.all([
+                db.query<[any[]]>(`SELECT id, name FROM users ORDER BY name`),
+                db.query<[any[]]>(`SELECT id, description, mac, user FROM devices WHERE ignored != true`),
+                db.query<[any[]]>(`SELECT VALUE device FROM device_logs WHERE timestamp >= <datetime>$cutoff`, { cutoff }),
+                db.query<[any[]]>(`SELECT device, time::max(timestamp) AS lastSeen FROM device_logs GROUP BY device`),
+            ]);
+
+            const users     = usersRes[0]      ?? [];
+            const deviceRows = deviceRowsRes[0] ?? [];
+            const recentLogs = recentLogsRes[0] ?? [];
+            const lastSeenRows = lastSeenRowsRes[0] ?? [];
+
+
+            const onlineSet = new Set(recentLogs.map((r: any) => String(r)));
+            const lastSeenMap = new Map(lastSeenRows.map((r: any) => [String(r.device), r.lastSeen]));
+
+            const list = (users ?? []).map((u: any) => ({
+                id: u.id,
+                name: u.name,
+                devices: (deviceRows ?? [])
+                    .filter((d: any) => String(d.user) === String(u.id))
+                    .map((d: any) => ({
+                        id: d.id,
+                        description: d.description,
+                        mac: d.mac,
+                        online: onlineSet.has(String(d.id)),
+                        lastSeen: lastSeenMap.get(String(d.id)) ?? null,
+                    })),
+            }));
+
             logger.info(`📊 /api/people query results: ${list.length} users`);
             return list;
         });

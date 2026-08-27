@@ -93,20 +93,20 @@ function Leaderboard({ title, subtitle, detail, rows, barColor, icon }: {
 }) {
   return (
     <div className="card flex flex-col overflow-hidden">
-      <div className="px-5 pt-5 pb-4 border-b" style={{ borderColor: 'var(--border)' }}>
+      <div className="border-b" style={{ padding: '20px 20px 16px', borderColor: 'var(--border)' }}>
         <div className="flex items-center gap-2">
           {icon && <span style={{ color: barColor, opacity: 0.8 }}>{icon}</span>}
           <h3 className="section-header flex-1">{title}</h3>
           {detail && <InfoTooltip detail={detail} />}
         </div>
-        {subtitle && <p className="font-mono text-[10px] mt-1.5" style={{ color: 'var(--muted)' }}>{subtitle}</p>}
+        {subtitle && <p className="font-mono text-[10px]" style={{ marginTop: 6, color: 'var(--muted)' }}>{subtitle}</p>}
       </div>
       <div className="flex flex-col">
         {rows.map((r, i) => (
           <div
             key={r.name}
-            className="flex items-center gap-3 px-5 py-3.5 transition-colors border-b last:border-b-0"
-            style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+            className="flex items-center transition-colors border-b last:border-b-0"
+            style={{ gap: 12, padding: '14px 20px', borderColor: 'var(--border)', background: 'var(--surface)' }}
             onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface2)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface)')}
           >
@@ -114,7 +114,7 @@ function Leaderboard({ title, subtitle, detail, rows, barColor, icon }: {
               {rankLabel(i)}
             </span>
             <div className="flex-1 min-w-0">
-              <div className="text-[13px] font-medium mb-1.5 truncate" style={{ color: 'var(--text)' }}>
+              <div className="text-[13px] font-medium truncate" style={{ marginBottom: 6, color: 'var(--text)' }}>
                 {emoji(r.name)} {r.name}
               </div>
               <div className="progress-track">
@@ -138,8 +138,8 @@ function StatTile({ label, value, sub, color, icon }: {
   label: string; value: string; sub?: string; color: string; icon: React.ReactNode;
 }) {
   return (
-    <div className="card px-6 py-5 flex items-center gap-5">
-      <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: `color-mix(in srgb, ${color} 15%, transparent)` }}>
+    <div className="card flex items-center" style={{ padding: '20px 24px', gap: 20 }}>
+      <div className="flex items-center justify-center shrink-0" style={{ width: 40, height: 40, borderRadius: 10, background: `color-mix(in srgb, ${color} 15%, transparent)` }}>
         <span style={{ color }}>{icon}</span>
       </div>
       <div className="min-w-0">
@@ -178,10 +178,10 @@ export function StatsPage() {
         {loading || !stats ? (
           <div className="py-16 text-center font-mono text-sm" style={{ color: 'var(--muted)' }}>Loading…</div>
         ) : (
-          <div className="container py-10 flex flex-col gap-8">
+          <div className="container flex flex-col" style={{ paddingTop: 40, paddingBottom: 40, gap: 32 }}>
 
             {/* Summary tiles */}
-            <div className="grid grid-cols-4 gap-5">
+            <div className="grid grid-cols-4" style={{ gap: 20 }}>
               <StatTile
                 label="Top attender"
                 value={stats.daysInOffice[0]?.userName ?? '—'}
@@ -213,7 +213,7 @@ export function StatsPage() {
             </div>
 
             {/* Row 1 — Days + Hours */}
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-2" style={{ gap: 24 }}>
               <Leaderboard
                 title="Days in office"
                 subtitle="Unique days with at least one device seen"
@@ -233,7 +233,7 @@ export function StatsPage() {
             </div>
 
             {/* Row 2 — Arrival / Departure / Avg */}
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-3" style={{ gap: 24 }}>
               <Leaderboard
                 title="Earliest arrival (avg)"
                 subtitle="Average time of first device ping"
@@ -260,8 +260,28 @@ export function StatsPage() {
               />
             </div>
 
+            {/* Row 2b — Earliest/Latest ever */}
+            <div className="grid grid-cols-2" style={{ gap: 24 }}>
+              <Leaderboard
+                title="Earliest arrival (record)"
+                subtitle="Single earliest arrival in the period"
+                detail="The absolute earliest time this person was ever detected in the office during the selected period — not an average."
+                rows={stats.earliestEver.map((r, i) => ({ name: r.userName, value: r.time, pct: 100 - i * 12 }))}
+                barColor="var(--accent)"
+                icon={<SunriseIcon />}
+              />
+              <Leaderboard
+                title="Latest departure (record)"
+                subtitle="Single latest departure in the period"
+                detail="The absolute latest time this person was ever detected in the office during the selected period — not an average."
+                rows={stats.latestEver.map((r, i) => ({ name: r.userName, value: r.time, pct: 100 - i * 12 }))}
+                barColor="var(--accent2)"
+                icon={<SunsetIcon />}
+              />
+            </div>
+
             {/* Row 3 — Streak + Consistent day */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2" style={{ gap: 24 }}>
               <Leaderboard
                 title="Longest streak"
                 subtitle="Most consecutive working days in office"
@@ -271,20 +291,20 @@ export function StatsPage() {
                 icon={<FlameIcon />}
               />
               <div className="card overflow-hidden">
-                <div className="px-5 pt-5 pb-4 border-b" style={{ borderColor: 'var(--border)' }}>
+                <div className="border-b" style={{ padding: '20px 20px 16px', borderColor: 'var(--border)' }}>
                   <div className="flex items-center gap-2">
                     <span style={{ color: 'var(--accent2)', opacity: 0.8 }}><CalIcon /></span>
                     <h3 className="section-header flex-1">Most consistent day</h3>
                     <InfoTooltip detail="The weekday each person comes in most often. Useful for knowing which days to expect the team to be in." />
                   </div>
-                  <p className="font-mono text-[10px] mt-1.5" style={{ color: 'var(--muted)' }}>Weekday with the most office visits</p>
+                  <p className="font-mono text-[10px]" style={{ marginTop: 6, color: 'var(--muted)' }}>Weekday with the most office visits</p>
                 </div>
                 <div className="flex flex-col">
                   {stats.mostConsistentDay.map((r, i) => (
                     <div
                       key={r.userId}
-                      className="flex items-center justify-between gap-3 px-5 py-3.5 text-[13px] transition-colors border-b last:border-b-0"
-                      style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+                      className="flex items-center justify-between text-[13px] transition-colors border-b last:border-b-0"
+                      style={{ gap: 12, padding: '14px 20px', borderColor: 'var(--border)', background: 'var(--surface)' }}
                       onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface2)')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface)')}
                     >
@@ -293,8 +313,8 @@ export function StatsPage() {
                         <span className="truncate" style={{ color: 'var(--text)' }}>{emoji(r.userName)} {r.userName}</span>
                       </div>
                       <span
-                        className="font-mono text-[10px] font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider shrink-0"
-                        style={{ background: 'var(--accent-dim)', color: 'var(--accent)', border: '1px solid color-mix(in srgb, var(--accent) 25%, transparent)' }}
+                        className="font-mono text-[10px] font-semibold uppercase tracking-wider shrink-0"
+                        style={{ padding: '4px 10px', borderRadius: 999, background: 'var(--accent-dim)', color: 'var(--accent)', border: '1px solid color-mix(in srgb, var(--accent) 25%, transparent)' }}
                       >
                         {r.weekday}
                       </span>
