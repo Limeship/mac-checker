@@ -93,19 +93,19 @@ function Leaderboard({ title, subtitle, detail, rows, barColor, icon }: {
 }) {
   return (
     <div className="card flex flex-col overflow-hidden">
-      <div className="px-4 pt-3.5 pb-2.5 border-b" style={{ borderColor: 'var(--border)' }}>
+      <div className="px-5 pt-5 pb-4 border-b" style={{ borderColor: 'var(--border)' }}>
         <div className="flex items-center gap-2">
           {icon && <span style={{ color: barColor, opacity: 0.8 }}>{icon}</span>}
           <h3 className="section-header flex-1">{title}</h3>
           {detail && <InfoTooltip detail={detail} />}
         </div>
-        {subtitle && <p className="font-mono text-[10px] mt-1" style={{ color: 'var(--muted)' }}>{subtitle}</p>}
+        {subtitle && <p className="font-mono text-[10px] mt-1.5" style={{ color: 'var(--muted)' }}>{subtitle}</p>}
       </div>
       <div className="flex flex-col">
         {rows.map((r, i) => (
           <div
             key={r.name}
-            className="flex items-center gap-3 px-4 py-2.5 transition-colors border-b last:border-b-0"
+            className="flex items-center gap-3 px-5 py-3.5 transition-colors border-b last:border-b-0"
             style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
             onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface2)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface)')}
@@ -138,7 +138,7 @@ function StatTile({ label, value, sub, color, icon }: {
   label: string; value: string; sub?: string; color: string; icon: React.ReactNode;
 }) {
   return (
-    <div className="card px-5 py-4 flex items-center gap-4">
+    <div className="card px-6 py-5 flex items-center gap-5">
       <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: `color-mix(in srgb, ${color} 15%, transparent)` }}>
         <span style={{ color }}>{icon}</span>
       </div>
@@ -178,10 +178,10 @@ export function StatsPage() {
         {loading || !stats ? (
           <div className="py-16 text-center font-mono text-sm" style={{ color: 'var(--muted)' }}>Loading…</div>
         ) : (
-          <div className="container py-6 flex flex-col gap-5">
+          <div className="container py-10 flex flex-col gap-8">
 
             {/* Summary tiles */}
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-4 gap-5">
               <StatTile
                 label="Top attender"
                 value={stats.daysInOffice[0]?.userName ?? '—'}
@@ -213,7 +213,7 @@ export function StatsPage() {
             </div>
 
             {/* Row 1 — Days + Hours */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-6">
               <Leaderboard
                 title="Days in office"
                 subtitle="Unique days with at least one device seen"
@@ -233,7 +233,7 @@ export function StatsPage() {
             </div>
 
             {/* Row 2 — Arrival / Departure / Avg */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-6">
               <Leaderboard
                 title="Earliest arrival (avg)"
                 subtitle="Average time of first device ping"
@@ -271,17 +271,19 @@ export function StatsPage() {
                 icon={<FlameIcon />}
               />
               <div className="card overflow-hidden">
-                <div className="px-4 pt-3.5 pb-2.5 flex items-center gap-2 border-b" style={{ borderColor: 'var(--border)' }}>
-                  <span style={{ color: 'var(--accent2)', opacity: 0.8 }}><CalIcon /></span>
-                  <h3 className="section-header flex-1">Most consistent day</h3>
-                  <InfoTooltip detail="The weekday each person comes in most often. Useful for knowing which days to expect the team to be in." />
+                <div className="px-5 pt-5 pb-4 border-b" style={{ borderColor: 'var(--border)' }}>
+                  <div className="flex items-center gap-2">
+                    <span style={{ color: 'var(--accent2)', opacity: 0.8 }}><CalIcon /></span>
+                    <h3 className="section-header flex-1">Most consistent day</h3>
+                    <InfoTooltip detail="The weekday each person comes in most often. Useful for knowing which days to expect the team to be in." />
+                  </div>
+                  <p className="font-mono text-[10px] mt-1.5" style={{ color: 'var(--muted)' }}>Weekday with the most office visits</p>
                 </div>
-                <p className="px-4 pt-1 pb-2 font-mono text-[10px]" style={{ color: 'var(--muted)' }}>Weekday with the most office visits</p>
                 <div className="flex flex-col">
                   {stats.mostConsistentDay.map((r, i) => (
                     <div
                       key={r.userId}
-                      className="flex items-center justify-between gap-3 px-4 py-2.5 text-[13px] transition-colors border-b last:border-b-0"
+                      className="flex items-center justify-between gap-3 px-5 py-3.5 text-[13px] transition-colors border-b last:border-b-0"
                       style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
                       onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface2)')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface)')}
