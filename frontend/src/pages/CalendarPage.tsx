@@ -198,7 +198,7 @@ export function CalendarPage() {
 
       {/* Footer */}
       <div className="shrink-0 border-t" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
-        <div className="container flex items-center gap-4 font-mono text-[11px]" style={{ height: 36 }} style={{ color: 'var(--muted)' }}>
+        <div className="container flex items-center gap-4 font-mono text-[11px]" style={{ height: 36, color: 'var(--muted)' }}>
           <div className="flex items-center gap-3">
             <LegendDot color="var(--accent)" label="Device online" />
             <LegendDot color="var(--accent2)" label="Robin reservation" />
