@@ -116,8 +116,8 @@ export function CalendarPage() {
   return (
     <div className="flex flex-col flex-1 overflow-hidden min-h-0">
       {/* Controls */}
-      <div className="shrink-0 border-b" style={{ borderColor: 'var(--border)' }}>
-        <div className="container flex items-center gap-2 h-12">
+      <div className="shrink-0 border-b" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+        <div className="container flex items-center gap-2" style={{ height: 48 }}>
           <button className="btn-icon" onClick={() => setOffset(o => o - 1)} aria-label="Previous">
             <ChevronLeft />
           </button>
@@ -198,7 +198,7 @@ export function CalendarPage() {
 
       {/* Footer */}
       <div className="shrink-0 border-t" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
-        <div className="container flex items-center gap-4 h-9 font-mono text-[11px]" style={{ color: 'var(--muted)' }}>
+        <div className="container flex items-center gap-4 font-mono text-[11px]" style={{ height: 36 }} style={{ color: 'var(--muted)' }}>
           <div className="flex items-center gap-3">
             <LegendDot color="var(--accent)" label="Device online" />
             <LegendDot color="var(--accent2)" label="Robin reservation" />

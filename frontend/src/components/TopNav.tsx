@@ -18,7 +18,7 @@ export function TopNav({ currentPage, currentTheme, onPageChange, onThemeChange 
 
   return (
     <header className="shrink-0 border-b" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-      <div className="container flex items-center gap-2 h-13">
+      <div className="container flex items-center gap-2" style={{ height: 52 }}>
         <div className="mr-4"><Logo /></div>
 
         <nav className="flex items-center gap-1 flex-1">

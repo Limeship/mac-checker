@@ -81,8 +81,8 @@ export function StatsPage() {
   return (
     <div className="flex flex-col flex-1 overflow-hidden min-h-0">
       {/* Controls */}
-      <div className="shrink-0 border-b" style={{ borderColor: 'var(--border)' }}>
-        <div className="container flex items-center gap-2 h-12">
+      <div className="shrink-0 border-b" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+        <div className="container flex items-center gap-2" style={{ height: 48 }}>
           <div className="flex gap-1">
             <button className={`btn ${period === 'monthly' ? 'active' : ''}`} onClick={() => setPeriod('monthly')}>This month</button>
             <button className={`btn ${period === 'yearly'  ? 'active' : ''}`} onClick={() => setPeriod('yearly')}>This year</button>

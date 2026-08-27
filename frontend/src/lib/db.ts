@@ -91,8 +91,9 @@ function computeStats(
 ): StatsResult {
   const byUser = new Map<string, typeof rows>();
   for (const row of rows) {
-    if (!byUser.has(row.userId)) byUser.set(row.userId, []);
-    byUser.get(row.userId)!.push(row);
+    const uid = String(row.userId ?? row.userName ?? '');
+    if (!byUser.has(uid)) byUser.set(uid, []);
+    byUser.get(uid)!.push(row);
   }
 
   const daysInOffice:      StatsResult['daysInOffice']      = [];
@@ -104,7 +105,7 @@ function computeStats(
   const mostConsistentDay: StatsResult['mostConsistentDay'] = [];
 
   for (const [userId, userRows] of byUser.entries()) {
-    const userName  = userRows[0].userName;
+    const userName = String(userRows[0].userName ?? userId);
     const days      = userRows.length;
     const totalMins = userRows.reduce((s: number, r: any) => s + (r.minutes ?? 0), 0);
 
@@ -148,7 +149,7 @@ function computeStats(
   latestAvg.sort((a, b) => b.time.localeCompare(a.time));
   avgHoursPerDay.sort((a, b) => b.hours - a.hours);
   longestStreak.sort((a, b) => b.days - a.days);
-  mostConsistentDay.sort((a, b) => a.userName.localeCompare(b.userName));
+  mostConsistentDay.sort((a, b) => String(a.userName).localeCompare(String(b.userName)));
 
   const workingDays = countWorkingDays(start, end);
   const deviceUptime: StatsResult['deviceUptime'] = deviceRows
