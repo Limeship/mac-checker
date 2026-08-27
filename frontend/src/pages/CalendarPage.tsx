@@ -301,6 +301,8 @@ function WeekGrid({ offset, entries, visiblePeople, onHover, onMove, onLeave }: 
                   className="p-1.5 flex flex-col gap-1"
                   style={{
                     minHeight: 64,
+                    minWidth: 0,
+                    overflow: 'hidden',
                     borderRight: di < 6 ? '1px solid var(--border)' : undefined,
                     background: isToday(d) ? 'var(--accent-dim)' : di >= 5 ? 'rgba(0,0,0,0.12)' : undefined,
                     opacity: di >= 5 ? 0.7 : 1,
