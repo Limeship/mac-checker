@@ -1,5 +1,57 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { fetchStats, emoji, type StatsResult } from '../lib/db';
+
+function InfoTooltip({ detail }: { detail: string }) {
+  const [visible, setVisible] = useState(false);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const ref = useRef<HTMLButtonElement>(null);
+
+  function show() {
+    if (ref.current) {
+      const r = ref.current.getBoundingClientRect();
+      setPos({ x: r.right + 8, y: r.top - 4 });
+    }
+    setVisible(true);
+  }
+
+  return (
+    <>
+      <button
+        ref={ref}
+        onMouseEnter={show}
+        onMouseLeave={() => setVisible(false)}
+        className="shrink-0 flex items-center justify-center rounded-full border-0 bg-transparent cursor-help"
+        style={{ width: 16, height: 16, color: 'var(--muted)' }}
+        tabIndex={-1}
+        aria-label="More info"
+      >
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/>
+          <path d="M8 7v5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          <circle cx="8" cy="4.5" r="0.8" fill="currentColor"/>
+        </svg>
+      </button>
+      {visible && (
+        <div
+          className="tooltip-box visible"
+          style={{
+            position: 'fixed',
+            left: Math.min(pos.x, window.innerWidth - 240),
+            top: pos.y,
+            maxWidth: 220,
+            fontSize: 12,
+            lineHeight: 1.5,
+            color: 'var(--text)',
+            zIndex: 9999,
+            pointerEvents: 'none',
+          }}
+        >
+          {detail}
+        </div>
+      )}
+    </>
+  );
+}
 
 type Period = 'monthly' | 'yearly';
 
@@ -31,17 +83,23 @@ function rankLabel(i: number) {
   return String(i + 1);
 }
 
-function Leaderboard({ title, rows, barColor, icon }: {
+function Leaderboard({ title, subtitle, detail, rows, barColor, icon }: {
   title: string;
+  subtitle?: string;
+  detail?: string;
   rows: Array<{ name: string; value: string; pct: number }>;
   barColor: string;
   icon?: React.ReactNode;
 }) {
   return (
     <div className="card flex flex-col overflow-hidden">
-      <div className="px-4 pt-3.5 pb-2.5 flex items-center gap-2 border-b" style={{ borderColor: 'var(--border)' }}>
-        {icon && <span style={{ color: barColor, opacity: 0.8 }}>{icon}</span>}
-        <h3 className="section-header">{title}</h3>
+      <div className="px-4 pt-3.5 pb-2.5 border-b" style={{ borderColor: 'var(--border)' }}>
+        <div className="flex items-center gap-2">
+          {icon && <span style={{ color: barColor, opacity: 0.8 }}>{icon}</span>}
+          <h3 className="section-header flex-1">{title}</h3>
+          {detail && <InfoTooltip detail={detail} />}
+        </div>
+        {subtitle && <p className="font-mono text-[10px] mt-1" style={{ color: 'var(--muted)' }}>{subtitle}</p>}
       </div>
       <div className="flex flex-col">
         {rows.map((r, i) => (
@@ -158,12 +216,16 @@ export function StatsPage() {
             <div className="grid grid-cols-2 gap-4">
               <Leaderboard
                 title="Days in office"
+                subtitle="Unique days with at least one device seen"
+                detail="A day counts if any registered device was detected on the network that day. Multiple devices on the same day still count as one day."
                 rows={stats.daysInOffice.map(r => ({ name: r.userName, value: `${r.days}d`, pct: r.days / (stats.daysInOffice[0]?.days || 1) * 100 }))}
                 barColor="var(--accent)"
                 icon={<OfficeIcon />}
               />
               <Leaderboard
                 title="Hours online"
+                subtitle="Total time from first to last device ping"
+                detail="Measured as the span from the earliest device ping to the latest on each day, then summed across all days. Reflects time in the office, not pure screen time."
                 rows={stats.hoursOnline.map(r => ({ name: r.userName, value: `${r.hours}h`, pct: r.hours / (stats.hoursOnline[0]?.hours || 1) * 100 }))}
                 barColor="var(--accent2)"
                 icon={<ClockIcon />}
@@ -174,18 +236,24 @@ export function StatsPage() {
             <div className="grid grid-cols-3 gap-4">
               <Leaderboard
                 title="Earliest arrival (avg)"
+                subtitle="Average time of first device ping"
+                detail="Averaged across all days in the selected period. Earlier = more consistent early starts."
                 rows={stats.earliestAvg.map((r, i) => ({ name: r.userName, value: r.time, pct: 100 - i * 12 }))}
                 barColor="var(--accent)"
                 icon={<SunriseIcon />}
               />
               <Leaderboard
                 title="Latest departure (avg)"
+                subtitle="Average time of last device ping"
+                detail="Averaged across all days in the selected period. Later = tends to stay in the office longer."
                 rows={stats.latestAvg.map((r, i) => ({ name: r.userName, value: r.time, pct: 100 - i * 12 }))}
                 barColor="var(--accent2)"
                 icon={<SunsetIcon />}
               />
               <Leaderboard
                 title="Avg hours / day"
+                subtitle="Average daily span when in office"
+                detail="Total online hours divided by the number of days present. Gives a sense of typical session length, not total commitment."
                 rows={stats.avgHoursPerDay.map(r => ({ name: r.userName, value: `${r.hours}h`, pct: r.hours / (stats.avgHoursPerDay[0]?.hours || 1) * 100 }))}
                 barColor="var(--accent)"
                 icon={<ClockIcon />}
@@ -196,6 +264,8 @@ export function StatsPage() {
             <div className="grid grid-cols-2 gap-4">
               <Leaderboard
                 title="Longest streak"
+                subtitle="Most consecutive working days in office"
+                detail="The longest run of back-to-back working days (Mon–Fri) with at least one device detected. Weekends don't break the streak."
                 rows={stats.longestStreak.map(r => ({ name: r.userName, value: `${r.days}d`, pct: r.days / (stats.longestStreak[0]?.days || 1) * 100 }))}
                 barColor="var(--accent)"
                 icon={<FlameIcon />}
@@ -203,8 +273,10 @@ export function StatsPage() {
               <div className="card overflow-hidden">
                 <div className="px-4 pt-3.5 pb-2.5 flex items-center gap-2 border-b" style={{ borderColor: 'var(--border)' }}>
                   <span style={{ color: 'var(--accent2)', opacity: 0.8 }}><CalIcon /></span>
-                  <h3 className="section-header">Most consistent day</h3>
+                  <h3 className="section-header flex-1">Most consistent day</h3>
+                  <InfoTooltip detail="The weekday each person comes in most often. Useful for knowing which days to expect the team to be in." />
                 </div>
+                <p className="px-4 pt-1 pb-2 font-mono text-[10px]" style={{ color: 'var(--muted)' }}>Weekday with the most office visits</p>
                 <div className="flex flex-col">
                   {stats.mostConsistentDay.map((r, i) => (
                     <div
@@ -233,6 +305,8 @@ export function StatsPage() {
             {/* Device uptime */}
             <Leaderboard
               title="Device uptime (% of working days)"
+              subtitle="How often each device was seen, out of all working days"
+              detail="Percentage of working days in the period where this specific device was detected on the network at least once."
               rows={stats.deviceUptime.map(r => ({
                 name: `${r.userName} · ${r.deviceDesc}`,
                 value: `${r.pct}%`,
@@ -246,6 +320,8 @@ export function StatsPage() {
             {stats.multiDeviceDays.length > 0 && (
               <Leaderboard
                 title="Days with multiple devices"
+                subtitle="Days when more than one registered device was online"
+                detail="Counts days where at least two of a person's registered devices were detected on the same day — e.g. a laptop and a phone both seen."
                 rows={stats.multiDeviceDays.map(r => ({ name: r.userName, value: `${r.days}d`, pct: r.days / (stats.multiDeviceDays[0]?.days || 1) * 100 }))}
                 barColor="var(--accent)"
                 icon={<DeviceIcon />}
