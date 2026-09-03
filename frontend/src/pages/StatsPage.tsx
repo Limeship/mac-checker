@@ -178,10 +178,10 @@ export function StatsPage() {
         {loading || !stats ? (
           <div className="py-16 text-center font-mono text-sm" style={{ color: 'var(--muted)' }}>Loading…</div>
         ) : (
-          <div className="container flex flex-col" style={{ paddingTop: 40, paddingBottom: 40, gap: 32 }}>
+          <div className="container flex flex-col" style={{ paddingTop: 24, paddingBottom: 24, gap: 20 }}>
 
             {/* Summary tiles */}
-            <div className="grid grid-cols-4" style={{ gap: 20 }}>
+            <div className="grid grid-cols-2 sm:grid-cols-4" style={{ gap: 16 }}>
               <StatTile
                 label="Top attender"
                 value={stats.daysInOffice[0]?.userName ?? '—'}
@@ -213,7 +213,7 @@ export function StatsPage() {
             </div>
 
             {/* Row 1 — Days + Hours */}
-            <div className="grid grid-cols-2" style={{ gap: 24 }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 20 }}>
               <Leaderboard
                 title="Days in office"
                 subtitle="Unique days with at least one device seen"
@@ -233,7 +233,7 @@ export function StatsPage() {
             </div>
 
             {/* Row 2 — Arrival / Departure / Avg */}
-            <div className="grid grid-cols-3" style={{ gap: 24 }}>
+            <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: 20 }}>
               <Leaderboard
                 title="Earliest arrival (avg)"
                 subtitle="Average time of first device ping"
@@ -261,7 +261,7 @@ export function StatsPage() {
             </div>
 
             {/* Row 2b — Earliest/Latest ever */}
-            <div className="grid grid-cols-2" style={{ gap: 24 }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 20 }}>
               <Leaderboard
                 title="Earliest arrival (record)"
                 subtitle="Single earliest arrival in the period"
@@ -281,7 +281,7 @@ export function StatsPage() {
             </div>
 
             {/* Row 3 — Streak + Consistent day */}
-            <div className="grid grid-cols-2" style={{ gap: 24 }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 20 }}>
               <Leaderboard
                 title="Longest streak"
                 subtitle="Most consecutive working days in office"

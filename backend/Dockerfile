@@ -21,6 +21,7 @@ RUN bun install --production
 EXPOSE 3000
 
 # Default env values
+ENV NODE_ENV=production
 ENV SurrealUrl=ws://surrealdb:8000/rpc
 ENV SurrealUser=root
 ENV SurrealPass=root

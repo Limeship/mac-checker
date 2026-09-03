@@ -2,7 +2,7 @@ import { Surreal } from "surrealdb";
 import { robinService } from "../services/robin.service";
 import { COLLECTIONS } from "../constants";
 import { DbUser } from "../types/db";
-import { logger } from "../utils/logger";
+import { schedulerLogger as logger } from "../utils/logger";
 
 export async function syncRobinReservations(db: Surreal) {
     try {

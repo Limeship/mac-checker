@@ -4,7 +4,7 @@ import { runJob } from "./job";
 import { syncRobinReservations } from "../jobs/robinSync";
 import { syncDevices } from "../db/syncDevices";
 import { initCollections } from "../db/initDb";
-import { logger } from "../utils/logger";
+import { schedulerLogger as logger } from "../utils/logger";
 
 export class Scheduler {
     constructor(private db: Database) { }

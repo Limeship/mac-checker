@@ -13,8 +13,15 @@
   max-width: 64rem; /* 1024px / ~5xl */
   margin-left: auto;
   margin-right: auto;
-  padding-left: 1.5rem;
-  padding-right: 1.5rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
 }
 
 :root {
@@ -199,6 +206,12 @@ button.section-header:hover {
 }
 .nav-link:hover { background: var(--surface2); color: var(--text); }
 .nav-link.active { background: var(--accent-dim); color: var(--accent); }
+
+/* On small screens, collapse nav labels so just the icon shows */
+.nav-link-mobile { padding: 6px 10px; }
+@media (min-width: 640px) {
+  .nav-link-mobile { padding: 6px 12px; }
+}
 
 /* Tooltip */
 .tooltip-box {

@@ -140,11 +140,11 @@ export function CalendarPage() {
     <div className="flex flex-col flex-1 overflow-hidden min-h-0">
       {/* Controls */}
       <div className="shrink-0 border-b" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
-        <div className="container flex items-center gap-2" style={{ height: 48 }}>
+        <div className="container flex flex-wrap items-center gap-2" style={{ minHeight: 48, paddingTop: 8, paddingBottom: 8 }}>
           <button className="btn-icon" onClick={() => setOffset(o => o - 1)} aria-label="Previous">
             <ChevronLeft />
           </button>
-          <span className="font-mono text-[13px] font-medium min-w-[170px] text-center" style={{ color: 'var(--accent)' }}>
+          <span className="font-mono text-[13px] font-medium min-w-[140px] sm:min-w-[170px] text-center" style={{ color: 'var(--accent)' }}>
             {view === 'week'
               ? (() => {
                   const m = getMondayOf(offset);
@@ -225,24 +225,26 @@ export function CalendarPage() {
           </div>
         ) : (
           <div className="container" style={{ paddingTop: 24, paddingBottom: 24 }}>
-            {view === 'week' ? (
-              <WeekGrid
-                offset={offset}
-                entries={filteredEntries}
-                visiblePeople={uniquePeopleInView}
-                onHover={showTooltip}
-                onMove={moveTooltip}
-                onLeave={hideTooltip}
-              />
-            ) : (
-              <MonthGrid
-                offset={offset}
-                entries={filteredEntries}
-                onHover={showTooltip}
-                onMove={moveTooltip}
-                onLeave={hideTooltip}
-              />
-            )}
+            <div style={{ overflowX: 'auto' }}>
+              {view === 'week' ? (
+                <WeekGrid
+                  offset={offset}
+                  entries={filteredEntries}
+                  visiblePeople={uniquePeopleInView}
+                  onHover={showTooltip}
+                  onMove={moveTooltip}
+                  onLeave={hideTooltip}
+                />
+              ) : (
+                <MonthGrid
+                  offset={offset}
+                  entries={filteredEntries}
+                  onHover={showTooltip}
+                  onMove={moveTooltip}
+                  onLeave={hideTooltip}
+                />
+              )}
+            </div>
           </div>
         )}
       </div>

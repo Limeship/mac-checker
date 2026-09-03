@@ -19,24 +19,24 @@ export function TopNav({ currentPage, currentTheme, onPageChange, onThemeChange 
   return (
     <header className="shrink-0 border-b" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
       <div className="container flex items-center gap-2" style={{ height: 52 }}>
-        <div className="mr-4"><Logo /></div>
+        <div className="mr-2 sm:mr-4 shrink-0"><Logo /></div>
 
-        <nav className="flex items-center gap-1 flex-1">
+        <nav className="flex items-center gap-0.5 sm:gap-1 flex-1 min-w-0">
           <NavLink active={currentPage === 'calendar'} onClick={() => onPageChange('calendar')}>
             <CalendarIcon />
-            Calendar
+            <span className="hidden sm:inline">Calendar</span>
           </NavLink>
           <NavLink active={currentPage === 'stats'} onClick={() => onPageChange('stats')}>
             <StatsIcon />
-            Stats
+            <span className="hidden sm:inline">Stats</span>
           </NavLink>
           <NavLink active={currentPage === 'devices'} onClick={() => onPageChange('devices')}>
             <PeopleIcon />
-            People
+            <span className="hidden sm:inline">People</span>
           </NavLink>
         </nav>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
           {themes.map(t => (
             <button
               key={t.id}
@@ -63,7 +63,7 @@ export function TopNav({ currentPage, currentTheme, onPageChange, onThemeChange 
 
 function NavLink({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button className={`nav-link ${active ? 'active' : ''}`} onClick={onClick}>
+    <button className={`nav-link nav-link-mobile ${active ? 'active' : ''}`} onClick={onClick}>
       {children}
     </button>
   );

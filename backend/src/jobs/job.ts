@@ -3,7 +3,7 @@ import { codaService, type Device } from "../services/coda.service";
 import { checkDevice, getLocalDevices } from "../utils/checkDevice";
 import { COLLECTIONS } from "../constants";
 import { DbDevice } from "../types/db";
-import { logger } from "../utils/logger";
+import { schedulerLogger as logger } from "../utils/logger";
 
 export async function runJob(db: Surreal): Promise<void> {
   let devices: Device[];

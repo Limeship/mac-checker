@@ -4,7 +4,7 @@ import { syncDevices } from "./db/syncDevices";
 import { runJob } from "./jobs/job";
 import { Scheduler } from "./jobs/scheduler";
 import { app } from "./api";
-import { logger } from "./utils/logger";
+import { schedulerLogger as logger } from "./utils/logger";
 
 const isProd = process.env.NODE_ENV === 'production';
 
