@@ -6,7 +6,7 @@ import { Scheduler } from "./jobs/scheduler";
 import { app } from "./api";
 import { schedulerLogger as logger } from "./utils/logger";
 
-const isProd = process.env.NODE_ENV === 'production';
+const isProd = Bun.env.NODE_ENV === 'production';
 
 async function startApp() {
   logger.info("🚀 Starting device checker and server...");
