@@ -9,6 +9,8 @@ RUN bun run build
 
 # Production stage
 FROM oven/bun:1-alpine
+ARG VERSION=dev
+ENV APP_VERSION=$VERSION
 WORKDIR /app
 
 # Copy the bundled code

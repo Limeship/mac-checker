@@ -8,6 +8,8 @@ RUN npm run build
 
 # Serve stage — minimal Bun static server with /api proxy
 FROM oven/bun:1-alpine
+ARG VERSION=dev
+ENV APP_VERSION=$VERSION
 WORKDIR /app
 COPY --from=build /app/dist ./dist
 COPY server.ts ./
